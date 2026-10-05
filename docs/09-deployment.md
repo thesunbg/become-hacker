@@ -90,10 +90,29 @@ update:
 git pull && ./scripts/deploy.sh play.example.com
 ```
 
-To check the deployment works before a domain exists, `./scripts/deploy.sh --no-domain` serves
-over plain HTTP on port 80. It prints a warning because it means the session cookie travels in
-clear text, where anyone on the network path can read it and sign in as that player. Point a
-domain at the server and re-run with it as soon as you can.
+### Without a domain
+
+If the server already runs something on port 80, or DNS is not ready yet:
+
+```bash
+./scripts/deploy.sh --no-domain          # HTTP on port 8080
+./scripts/deploy.sh --no-domain 9000     # or a port you choose
+```
+
+The default is 8080 rather than 80 because a VPS usually has something on 80 already, and
+finding that out from a failed container start is a poor way to learn it. The script checks the
+port is free before building.
+
+It prints a warning, and the warning is not boilerplate: without TLS the session cookie travels
+in clear text, so anyone on the network path can read it and sign in as that player. Point a
+domain at the server and re-run with it as soon as you can — re-running keeps the secrets in
+`.env` and rewrites only the keys that describe how the site is reached.
+
+**`WEB_ORIGIN` must carry the port.** The CSRF check compares it against the browser's `Origin`
+header exactly, and a browser includes a non-default port — so `http://203.0.113.9` where the
+browser sends `http://203.0.113.9:8080` makes every sign-in fail with a 403 that looks like a
+bug in the application. The script builds it correctly; set it by hand and this is the mistake
+to avoid.
 
 Doing it by hand instead:
 
