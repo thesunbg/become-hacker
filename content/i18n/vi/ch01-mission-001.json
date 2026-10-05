@@ -1,0 +1,33 @@
+{
+  "missionId": "ch01-mission-001",
+  "title": "Khởi đầu",
+  "story": "Một người giao hàng để lại chiếc laptop trước cửa nhà bạn. Không lời nhắn, không người gửi, không giải thích. Pin còn 4%. Khi màn hình cuối cùng cũng sáng lên, không có desktop, không icon, không trình duyệt — chỉ một con trỏ nhấp nháy đang chờ bạn.\n\nAi đó muốn bạn có chiếc máy này. Trước khi tìm ra họ là ai, bạn cần biết mình đang đứng ở đâu.",
+  "objective": "Bạn đang ở đâu đó bên trong chiếc máy này, đăng nhập dưới danh nghĩa một ai đó. Hãy tìm ra bạn là ai và bạn đang đứng chỗ nào.",
+  "tasks": {
+    "identify-user": "Tìm xem bạn đang đăng nhập bằng người dùng nào.",
+    "identify-cwd": "Tìm xem bạn đang ở thư mục nào.",
+    "read-readme": "Có một tệp đang chờ bạn trong thư mục home. Hãy đọc nó."
+  },
+  "hints": {
+    "1": "Con trỏ đó là một dấu nhắc — nó đang chờ bạn hỏi chiếc máy một câu. Nếu muốn biết mình là ai, bạn sẽ hỏi gì?",
+    "2": "Lệnh Linux thường là tiếng Anh ngắn và thẳng. Có một lệnh mà toàn bộ công việc của nó là trả lời câu 'tôi là ai?', và một lệnh khác in ra thư mục bạn đang làm việc.",
+    "3": "Thử `whoami` để xem tên người dùng, rồi `pwd` để in thư mục hiện tại. Để đọc tệp: `cat README.txt`."
+  },
+  "knowledge": [
+    {
+      "concept": "Danh tính: người dùng",
+      "explanation": "Mọi tiến trình trên hệ thống Linux đều chạy dưới danh nghĩa một người dùng nào đó. Người dùng đó quyết định bạn được đọc gì, ghi gì, chạy gì. Ở đây 'tôi là ai?' không phải câu hỏi triết học — nó là thứ đầu tiên quyết định điều gì là khả thi.",
+      "realWorld": "Trò chơi: tìm xem bạn là ai → Bảo mật: xác định security context của phiên làm việc → Thực tế: đây là câu hỏi đầu tiên trên bất kỳ máy nào bị xâm nhập, vì nó cho kẻ tấn công biết họ đang có sẵn những gì, và cho người phòng thủ biết tài khoản nào đã bị dùng."
+    },
+    {
+      "concept": "Vị trí: thư mục làm việc",
+      "explanation": "Hệ thống tệp là một cái cây, và bạn luôn đứng ở đâu đó trong nó. Lệnh bạn gõ tác động tương đối với chỗ bạn đứng — đó là lý do cùng một lệnh có thể cho kết quả khác nhau ở hai nơi khác nhau.",
+      "realWorld": "Trò chơi: in ra thư mục của bạn → Bảo mật: định vị trong hệ thống tệp → Thực tế: biết mình đang ở đâu trước khi hành động là thứ phân biệt làm việc có chủ đích với đoán mò."
+    },
+    {
+      "concept": "Shell là một cuộc đối thoại",
+      "explanation": "Dấu nhắc không phải bức tường. Bạn hỏi máy một câu, nó trả lời, và câu trả lời định hình câu hỏi tiếp theo. Mọi thứ trong trò chơi này đều dựng trên vòng lặp đó.",
+      "realWorld": "Trò chơi: những lệnh đầu tiên của bạn → Bảo mật: điều tra tương tác → Thực tế: mọi cuộc điều tra, tấn công và ứng cứu sự cố đều là vòng lặp này lặp đi lặp lại."
+    }
+  ]
+}

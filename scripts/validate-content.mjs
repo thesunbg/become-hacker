@@ -210,6 +210,123 @@ for (const flag of new Set(flags)) {
     crossErrors.push(`duplicate flag reused across missions`);
 }
 
+// --- Translations -----------------------------------------------------------------------
+//
+// A translation carries text and nothing else. The canonical mission stays the only source of
+// flags, task targets and ids, so these checks exist to make that structural rather than a
+// convention someone remembers: a translation file that names a flag or a target is rejected,
+// as is one that has drifted out of alignment with the mission it translates.
+const i18nDir = join(root, 'content/i18n');
+const FORBIDDEN_KEYS = ['flag', 'target', 'xp', 'xpCost', 'id', 'type', 'optional', 'requires'];
+
+function forbiddenKeysIn(value, path = '') {
+  const found = [];
+  if (Array.isArray(value)) {
+    value.forEach((item, i) => found.push(...forbiddenKeysIn(item, `${path}[${i}]`)));
+  } else if (value !== null && typeof value === 'object') {
+    for (const [key, child] of Object.entries(value)) {
+      // `tasks` and `hints` are maps keyed by task id and hint level, so their *keys* are
+      // identifiers by design; only their values are inspected.
+      if (FORBIDDEN_KEYS.includes(key) && !/\.(tasks|hints)$/.test(path)) {
+        found.push(`${path}.${key}`);
+      }
+      found.push(...forbiddenKeysIn(child, `${path}.${key}`));
+    }
+  }
+  return found;
+}
+
+if (existsSync(i18nDir)) {
+  const byId = new Map(missions.map((m) => [m.id, m]));
+
+  for (const locale of readdirSync(i18nDir).filter((d) =>
+    statSync(join(i18nDir, d)).isDirectory(),
+  )) {
+    for (const file of readdirSync(join(i18nDir, locale)).filter((f) => f.endsWith('.json'))) {
+      const rel = `content/i18n/${locale}/${file}`;
+      let translation;
+      try {
+        translation = JSON.parse(readFileSync(join(i18nDir, locale, file), 'utf8'));
+      } catch (err) {
+        console.error(`✗ ${rel}\n    not valid JSON: ${err.message}`);
+        failures++;
+        continue;
+      }
+
+      if (file === 'chapters.json') {
+        console.log(`✓ ${rel}  chapter titles`);
+        continue;
+      }
+
+      const errors = [];
+      const mission = byId.get(translation.missionId);
+
+      if (translation.missionId === undefined) {
+        errors.push('missing missionId');
+      } else if (mission === undefined) {
+        errors.push(`translates unknown mission "${translation.missionId}"`);
+      } else if (file !== `${translation.missionId}.json`) {
+        errors.push(`filename should be "${translation.missionId}.json"`);
+      }
+
+      const forbidden = forbiddenKeysIn(translation);
+      if (forbidden.length > 0) {
+        errors.push(
+          `carries fields a translation must never set: ${forbidden.join(', ')} — ` +
+            'the canonical mission owns flags, targets and ids',
+        );
+      }
+
+      if (mission !== undefined) {
+        const taskIds = new Set(mission.tasks.map((t) => t.id));
+        for (const id of Object.keys(translation.tasks ?? {})) {
+          if (!taskIds.has(id)) errors.push(`translates unknown task "${id}"`);
+        }
+        const levels = new Set(mission.hints.map((h) => String(h.level)));
+        for (const level of Object.keys(translation.hints ?? {})) {
+          if (!levels.has(level)) errors.push(`translates unknown hint level "${level}"`);
+        }
+        if (
+          translation.knowledge !== undefined &&
+          translation.knowledge.length !== mission.knowledge.length
+        ) {
+          errors.push(
+            `has ${translation.knowledge.length} knowledge entries but the mission has ` +
+              `${mission.knowledge.length}; they are matched by position`,
+          );
+        }
+        // Untranslated text is not an error — it falls back to the original — but silence
+        // about it is how a language quietly stays half-finished.
+        const missing = [];
+        for (const field of ['title', 'story', 'objective']) {
+          if (translation[field] === undefined) missing.push(field);
+        }
+        for (const task of mission.tasks) {
+          if (translation.tasks?.[task.id] === undefined) missing.push(`tasks.${task.id}`);
+        }
+        for (const hint of mission.hints) {
+          if (translation.hints?.[String(hint.level)] === undefined) {
+            missing.push(`hints.${hint.level}`);
+          }
+        }
+        if (missing.length > 0) {
+          warnings.push(
+            `${rel}: not translated yet, will fall back to English: ${missing.join(', ')}`,
+          );
+        }
+      }
+
+      if (errors.length > 0) {
+        console.error(`✗ ${rel}`);
+        for (const e of errors) console.error(`    ${e}`);
+        failures++;
+      } else {
+        console.log(`✓ ${rel}  ${translation.missionId}`);
+      }
+    }
+  }
+}
+
 if (crossErrors.length) {
   console.error('\n✗ cross-mission checks');
   for (const e of crossErrors) console.error(`    ${e}`);

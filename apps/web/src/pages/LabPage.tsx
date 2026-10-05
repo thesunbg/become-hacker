@@ -7,12 +7,15 @@ import { Button, ErrorNote, Input, Panel } from '../components/ui';
 import { Terminal } from '../components/Terminal';
 import { KnowledgeReview } from '../components/KnowledgeReview';
 import { useSession } from '../store/session';
+import { useLocaleStore, useT } from '../i18n';
 
 export function LabPage() {
   const { sessionId = '' } = useParams();
   const navigate = useNavigate();
   const location = useLocation() as { state?: { missionId?: string } };
   const { refresh } = useSession();
+  const t = useT();
+  const locale = useLocaleStore((state) => state.locale);
 
   const [missionId, setMissionId] = useState(location.state?.missionId ?? '');
   const [detail, setDetail] = useState<MissionDetailResponse | null>(null);
@@ -47,8 +50,9 @@ export function LabPage() {
         setDetail(loaded);
         setProgress(loaded.progress);
       })
-      .catch(() => setError('Could not load the mission for this lab.'));
-  }, [missionId]);
+      .catch(() => setError(t('mission.loadFailed')));
+    // Mission text is server-rendered, so a language change refetches it.
+  }, [missionId, locale]);
 
   const onProgress = useCallback((updated: MissionProgress) => {
     setProgress(updated);
@@ -69,17 +73,17 @@ export function LabPage() {
         setResult(response.result);
         await refresh();
         if (response.result === null) {
-          setNote('That is the right flag — but the mission is not finished yet.');
+          setNote(t('lab.rightFlagNotDone'));
         } else {
           // The mission was loaded while still in progress, so its knowledge review was
           // withheld. Now that it is complete, fetch it: that review is the point.
           setDetail(await api.mission(missionId).catch(() => detail));
         }
       } else {
-        setError('Not the flag. Look again at what you have actually found.');
+        setError(t('lab.wrongFlag'));
       }
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'Could not submit that.');
+      setError(caught instanceof Error ? caught.message : t('lab.submitFailed'));
     }
   };
 
@@ -99,19 +103,21 @@ export function LabPage() {
     <main className="space-y-6">
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <p className="font-mono text-xs tracking-[0.2em] text-muted uppercase">Lab session</p>
+          <p className="font-mono text-xs tracking-[0.2em] text-muted uppercase">
+            {t('lab.session')}
+          </p>
           <h1 className="font-mono text-xl font-bold">{mission?.title ?? 'Lab'}</h1>
         </div>
         <div className="flex items-center gap-4">
           {progress !== null && (
             <span className="font-mono text-xs text-muted">
               {formatDuration(progress.elapsedSeconds)} · {progress.completedRequiredCount}/
-              {progress.requiredTaskCount} objectives
+              {progress.requiredTaskCount} {t('lab.objectivesShort')}
               {progress.hintsUsed.length > 0 && ` · ${progress.hintsUsed.length} hints`}
             </span>
           )}
           <Button variant="danger" onClick={() => void leave()}>
-            Close lab
+            {t('lab.closeLab')}
           </Button>
         </div>
       </header>
@@ -120,25 +126,21 @@ export function LabPage() {
         <div className="space-y-4">
           <Terminal sessionId={sessionId} onProgress={onProgress} onClosed={onClosed} />
 
-          <Panel title="Submit a flag">
+          <Panel title={t('lab.submitFlag')}>
             <form onSubmit={submitFlag} className="flex flex-wrap items-end gap-3">
               <div className="min-w-56 flex-1">
                 <Input
-                  label="Flag"
+                  label={t('lab.flag')}
                   placeholder="ZR{…}"
                   value={flag}
                   onChange={(event) => setFlag(event.target.value)}
                 />
               </div>
               <Button type="submit" disabled={flag.trim() === ''}>
-                Submit
+                {t('lab.submit')}
               </Button>
             </form>
-            <p className="mt-3 text-xs text-muted">
-              The server checks this against content you have never been sent. Guessing is
-              throttled, and a wrong answer costs very little — the penalty for being wrong is meant
-              to be mild.
-            </p>
+            <p className="mt-3 text-xs text-muted">{t('lab.flagNote')}</p>
           </Panel>
 
           <ErrorNote>{error}</ErrorNote>
@@ -150,22 +152,22 @@ export function LabPage() {
 
           {result !== null && (
             <div ref={resultRef}>
-              <Panel title="Mission complete">
+              <Panel title={t('lab.complete')}>
                 <dl className="grid grid-cols-2 gap-x-6 gap-y-2 font-mono text-sm sm:grid-cols-4">
                   <div>
-                    <dt className="text-xs text-muted">Time</dt>
+                    <dt className="text-xs text-muted">{t('lab.time')}</dt>
                     <dd>{formatDuration(result.elapsedSeconds)}</dd>
                   </div>
                   <div>
-                    <dt className="text-xs text-muted">Hints</dt>
+                    <dt className="text-xs text-muted">{t('lab.hintsUsed')}</dt>
                     <dd>{result.hintsUsed}</dd>
                   </div>
                   <div>
-                    <dt className="text-xs text-muted">Mistakes</dt>
+                    <dt className="text-xs text-muted">{t('lab.mistakes')}</dt>
                     <dd>{result.mistakes}</dd>
                   </div>
                   <div>
-                    <dt className="text-xs text-muted">Score</dt>
+                    <dt className="text-xs text-muted">{t('lab.score')}</dt>
                     <dd>{result.score}</dd>
                   </div>
                 </dl>
@@ -177,9 +179,9 @@ export function LabPage() {
                   </div>
                 )}
                 <div className="mt-6 flex flex-wrap gap-3">
-                  <Button onClick={() => void leaveFor('/missions')}>Next mission</Button>
+                  <Button onClick={() => void leaveFor('/missions')}>{t('lab.nextMission')}</Button>
                   <Button variant="ghost" onClick={() => void leaveFor('/dashboard')}>
-                    Dashboard
+                    {t('nav.dashboard')}
                   </Button>
                 </div>
               </Panel>
@@ -188,7 +190,7 @@ export function LabPage() {
         </div>
 
         <aside className="space-y-4">
-          <Panel title="Objectives">
+          <Panel title={t('mission.objectives')}>
             <ul className="space-y-2">
               {(mission?.tasks ?? []).map((task) => {
                 const done = progress?.tasks.find((t) => t.taskId === task.id)?.completed ?? false;
@@ -203,7 +205,9 @@ export function LabPage() {
                     <span className={done ? 'text-muted line-through' : ''}>
                       {task.description}
                       {task.optional && (
-                        <span className="ml-1.5 font-mono text-[11px] text-info">bonus</span>
+                        <span className="ml-1.5 font-mono text-[11px] text-info">
+                          {t('mission.bonus')}
+                        </span>
                       )}
                     </span>
                   </li>
@@ -213,7 +217,7 @@ export function LabPage() {
           </Panel>
 
           {detail !== null && detail.revealedHints.length > 0 && (
-            <Panel title="Hints you bought">
+            <Panel title={t('lab.hintsBought')}>
               <ol className="space-y-3">
                 {detail.revealedHints.map((hint) => (
                   <li key={hint.level} className="text-sm leading-relaxed">
@@ -225,7 +229,7 @@ export function LabPage() {
             </Panel>
           )}
 
-          <Panel title="Objective">
+          <Panel title={t('mission.objective')}>
             <p className="text-sm leading-relaxed text-muted">{mission?.objective}</p>
           </Panel>
         </aside>

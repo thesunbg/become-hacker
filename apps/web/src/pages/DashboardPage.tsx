@@ -5,6 +5,7 @@ import { api } from '../lib/api';
 import { levelProgress, rankForLevel, stars } from '../lib/format';
 import { Button, Meter, Panel, StateBadge } from '../components/ui';
 import { useSession } from '../store/session';
+import { useLocaleStore, useT } from '../i18n';
 
 /** The one mission the player should look at next. */
 function nextMission(missions: readonly PublicMission[]): PublicMission | undefined {
@@ -16,6 +17,9 @@ function nextMission(missions: readonly PublicMission[]): PublicMission | undefi
 
 export function DashboardPage() {
   const { me } = useSession();
+  const t = useT();
+  // Mission text is rendered by the server, so a language change has to refetch it.
+  const locale = useLocaleStore((state) => state.locale);
   const [data, setData] = useState<MissionListResponse | null>(null);
 
   useEffect(() => {
@@ -23,7 +27,7 @@ export function DashboardPage() {
       .missions()
       .then(setData)
       .catch(() => setData(null));
-  }, []);
+  }, [locale]);
 
   const progress = levelProgress(me?.xp ?? 0);
   const current = data === null ? undefined : nextMission(data.missions);
@@ -40,19 +44,20 @@ export function DashboardPage() {
         <div className="flex flex-wrap items-end justify-between gap-6">
           <div>
             <p className="font-mono text-xs tracking-[0.2em] text-muted uppercase">
-              Level {progress.level}
+              {t('dash.level')} {progress.level}
             </p>
             <h1 className="mt-1 font-mono text-2xl font-bold">{rankForLevel(progress.level)}</h1>
             <p className="mt-1 text-sm text-muted">
-              {me?.username} · {me?.xp ?? 0} XP · {completed} mission
-              {completed === 1 ? '' : 's'} complete
+              {me?.username} · {me?.xp ?? 0} XP · {completed}{' '}
+              {t(completed === 1 ? 'dash.missionComplete' : 'dash.missionsComplete')}
             </p>
           </div>
           <div className="w-full max-w-xs">
             <div className="mb-1.5 flex justify-between font-mono text-[11px] text-muted">
               <span>{progress.percent}%</span>
               <span>
-                {progress.into} / {progress.needed} to L{progress.level + 1}
+                {progress.into} / {progress.needed} {t('dash.toLevel')}
+                {progress.level + 1}
               </span>
             </div>
             <Meter percent={progress.percent} />
@@ -61,24 +66,24 @@ export function DashboardPage() {
       </Panel>
 
       <div className="grid gap-6 md:grid-cols-3">
-        <Panel title="Thinking" className="md:col-span-1">
+        <Panel title={t('dash.thinking')} className="md:col-span-1">
           <p className="font-mono text-3xl text-info">{Math.min(100, completed * 12)}</p>
-          <p className="mt-1 text-xs text-muted">Observation, logic, persistence.</p>
+          <p className="mt-1 text-xs text-muted">{t('dash.thinkingHint')}</p>
         </Panel>
-        <Panel title="Technical" className="md:col-span-1">
+        <Panel title={t('dash.technical')} className="md:col-span-1">
           <p className="font-mono text-3xl text-signal">{technical}</p>
-          <p className="mt-1 text-xs text-muted">Averaged across your skills.</p>
+          <p className="mt-1 text-xs text-muted">{t('dash.technicalHint')}</p>
         </Panel>
-        <Panel title="Defense" className="md:col-span-1">
+        <Panel title={t('dash.defense')} className="md:col-span-1">
           <p className="font-mono text-3xl text-muted">0</p>
-          <p className="mt-1 text-xs text-muted">Unlocks with the blue team chapters.</p>
+          <p className="mt-1 text-xs text-muted">{t('dash.defenseHint')}</p>
         </Panel>
       </div>
 
-      <Panel title="Current mission">
+      <Panel title={t('dash.currentMission')}>
         {current === undefined ? (
           <p className="text-sm text-muted">
-            Nothing waiting. {completed > 0 ? 'More chapters are on the way.' : 'Loading…'}
+            {t('dash.nothingWaiting')} {completed > 0 ? t('dash.moreComing') : t('dash.loading')}
           </p>
         ) : (
           <div className="flex flex-wrap items-start justify-between gap-4">
@@ -91,13 +96,13 @@ export function DashboardPage() {
               <p className="text-sm leading-relaxed text-muted">{current.objective}</p>
             </div>
             <Link to={`/missions/${current.id}`}>
-              <Button>Enter briefing</Button>
+              <Button>{t('dash.enterBriefing')}</Button>
             </Link>
           </div>
         )}
       </Panel>
 
-      <Panel title="Chapters">
+      <Panel title={t('dash.chapters')}>
         <ul className="divide-y divide-border">
           {(data?.chapters ?? []).map((chapter) => (
             <li key={chapter.chapter} className="flex items-center gap-4 py-3 first:pt-0 last:pb-0">

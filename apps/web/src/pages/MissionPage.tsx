@@ -4,12 +4,15 @@ import type { MissionDetailResponse } from '@zero-root/types';
 import { api } from '../lib/api';
 import { stars } from '../lib/format';
 import { Button, ErrorNote, Panel, StateBadge } from '../components/ui';
+import { useLocaleStore, useT } from '../i18n';
 import { KnowledgeReview } from '../components/KnowledgeReview';
 
 /** The briefing: story, objective, checklist, hints, and the way into the lab. */
 export function MissionPage() {
   const { id = '' } = useParams();
   const navigate = useNavigate();
+  const t = useT();
+  const locale = useLocaleStore((state) => state.locale);
 
   const [detail, setDetail] = useState<MissionDetailResponse | null>(null);
   const [error, setError] = useState('');
@@ -19,13 +22,14 @@ export function MissionPage() {
     try {
       setDetail(await api.mission(id));
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'Could not load this mission.');
+      setError(caught instanceof Error ? caught.message : t('mission.loadFailed'));
     }
   }, [id]);
 
   useEffect(() => {
     void load();
-  }, [load]);
+    // Mission text comes from the server, so switching language refetches it.
+  }, [load, locale]);
 
   const enterLab = async (): Promise<void> => {
     setError('');
@@ -34,7 +38,7 @@ export function MissionPage() {
       const lab = await api.createLab(id);
       navigate(`/lab/${lab.sessionId}`, { state: { missionId: id } });
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'Could not start a lab.');
+      setError(caught instanceof Error ? caught.message : t('lab.labFailed'));
       setBusy(false);
     }
   };
@@ -45,7 +49,7 @@ export function MissionPage() {
       await api.hint(id);
       await load();
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'No hint available.');
+      setError(caught instanceof Error ? caught.message : t('mission.noHintLeft'));
     }
   };
 
@@ -53,7 +57,7 @@ export function MissionPage() {
     return (
       <main className="space-y-4">
         <ErrorNote>{error}</ErrorNote>
-        {error === '' && <p className="font-mono text-sm text-muted">Loading…</p>}
+        {error === '' && <p className="font-mono text-sm text-muted">{t('dash.loading')}</p>}
       </main>
     );
   }
@@ -68,37 +72,35 @@ export function MissionPage() {
       <header className="space-y-3">
         <div className="flex flex-wrap items-center gap-3">
           <p className="font-mono text-xs tracking-[0.2em] text-muted uppercase">
-            Chapter {mission.chapter} · {mission.id.slice(-3)}
+            {t('mission.chapter')} {mission.chapter} · {mission.id.slice(-3)}
           </p>
           <StateBadge state={mission.state} />
         </div>
         <h1 className="font-mono text-2xl font-bold">{mission.title}</h1>
         <p className="font-mono text-xs text-warn">
-          {stars(mission.difficulty)} · ~{mission.estimatedMinutes} min · {mission.xp} XP
+          {stars(mission.difficulty)} · ~{mission.estimatedMinutes} {t('mission.minutes')} ·{' '}
+          {mission.xp} XP
         </p>
       </header>
 
       {locked ? (
-        <Panel title="Locked">
-          <p className="text-sm text-muted">
-            Finish what this mission requires first. The briefing is part of what you earn by
-            getting here.
-          </p>
+        <Panel title={t('mission.locked')}>
+          <p className="text-sm text-muted">{t('mission.lockedBody')}</p>
         </Panel>
       ) : (
         <>
-          <Panel title="Briefing">
+          <Panel title={t('mission.briefing')}>
             <p className="font-mono text-sm leading-relaxed whitespace-pre-line text-text/90">
               {mission.story}
             </p>
           </Panel>
 
-          <Panel title="Objective">
+          <Panel title={t('mission.objective')}>
             <p className="text-sm leading-relaxed">{mission.objective}</p>
           </Panel>
 
           <Panel
-            title="Objectives"
+            title={t('mission.objectives')}
             action={
               <span className="font-mono text-[11px] text-muted">
                 {progress?.completedRequiredCount ?? 0} / {progress?.requiredTaskCount ?? 0}
@@ -119,7 +121,9 @@ export function MissionPage() {
                     <span className={done ? 'text-muted line-through' : ''}>
                       {task.description}
                       {task.optional && (
-                        <span className="ml-2 font-mono text-[11px] text-info">bonus</span>
+                        <span className="ml-2 font-mono text-[11px] text-info">
+                          {t('mission.bonus')}
+                        </span>
                       )}
                     </span>
                   </li>
@@ -133,20 +137,17 @@ export function MissionPage() {
           </Panel>
 
           <Panel
-            title="Hints"
+            title={t('mission.hints')}
             action={
               nextHintCost !== undefined ? (
                 <Button variant="ghost" onClick={() => void buyHint()}>
-                  Ask for a hint (−{nextHintCost} XP)
+                  {t('mission.askHint')} (−{nextHintCost} XP)
                 </Button>
               ) : undefined
             }
           >
             {detail.revealedHints.length === 0 ? (
-              <p className="text-sm text-muted">
-                Hints start with a question, not an answer. They cost XP, and you keep what you work
-                out yourself.
-              </p>
+              <p className="text-sm text-muted">{t('mission.noHintsYet')}</p>
             ) : (
               <ol className="space-y-3">
                 {detail.revealedHints.map((hint) => (
@@ -165,10 +166,12 @@ export function MissionPage() {
 
           <div className="flex flex-wrap gap-3">
             <Button onClick={() => void enterLab()} disabled={busy}>
-              {busy ? 'Starting the lab…' : completed ? 'Revisit the lab' : 'Enter lab'}
+              {busy
+                ? t('mission.startingLab')
+                : t(completed ? 'mission.revisitLab' : 'mission.enterLab')}
             </Button>
             <Button variant="ghost" onClick={() => navigate('/missions')}>
-              Back to missions
+              {t('mission.backToMissions')}
             </Button>
           </div>
         </>

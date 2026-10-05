@@ -2,15 +2,18 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { levelProgress, rankForLevel } from '../lib/format';
 import { Meter } from './ui';
 import { useSession } from '../store/session';
+import { useT } from '../i18n';
+import { LocaleSwitch } from './LocaleSwitch';
 
 const NAV = [
-  { to: '/dashboard', label: 'Dashboard' },
-  { to: '/missions', label: 'Missions' },
-  { to: '/skills', label: 'Skills' },
-];
+  { to: '/dashboard', key: 'nav.dashboard' },
+  { to: '/missions', key: 'nav.missions' },
+  { to: '/skills', key: 'nav.skills' },
+] as const;
 
 export function Layout() {
   const { me, signOut } = useSession();
+  const t = useT();
   const navigate = useNavigate();
   const progress = levelProgress(me?.xp ?? 0);
 
@@ -33,12 +36,13 @@ export function Layout() {
                   }`
                 }
               >
-                {item.label}
+                {t(item.key)}
               </NavLink>
             ))}
           </nav>
 
           <div className="ml-auto flex items-center gap-4">
+            <LocaleSwitch />
             <div className="hidden w-40 sm:block">
               <div className="mb-1 flex justify-between font-mono text-[11px] text-muted">
                 <span>
@@ -55,7 +59,7 @@ export function Layout() {
               }}
               className="font-mono text-xs tracking-wider text-muted uppercase hover:text-danger"
             >
-              Sign out
+              {t('auth.signOut')}
             </button>
           </div>
         </div>

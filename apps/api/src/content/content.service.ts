@@ -1,7 +1,8 @@
 import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import type { MissionDefinition } from '@zero-root/types';
+import type { Locale, MissionDefinition, MissionTranslation } from '@zero-root/types';
+import { DEFAULT_LOCALE, LOCALES, localiseMission } from '@zero-root/types';
 import { sortMissions } from '@zero-root/mission-engine';
 import { APP_CONFIG, type AppConfig } from '../config/configuration';
 
@@ -20,6 +21,10 @@ import { APP_CONFIG, type AppConfig } from '../config/configuration';
 export class ContentService {
   private readonly logger = new Logger(ContentService.name);
   private missions = new Map<string, MissionDefinition>();
+  /** locale -> missionId -> translation */
+  private translations = new Map<Locale, Map<string, MissionTranslation>>();
+  /** locale -> chapter number -> title */
+  private chapterTitles = new Map<Locale, Record<string, string>>();
 
   /**
    * Content loads in the constructor rather than in `onModuleInit`.
@@ -56,14 +61,68 @@ export class ContentService {
 
     this.missions = loaded;
     this.logger.log(`Loaded ${loaded.size} mission(s) from ${chaptersDir}`);
+    this.loadTranslations();
   }
 
+  /**
+   * Loads `content/i18n/<locale>/`.
+   *
+   * A missing or partial language is not an error: {@link localiseMission} falls back field
+   * by field, so a half-translated locale shows translated text where it exists and the
+   * original everywhere else, rather than blanks.
+   */
+  private loadTranslations(): void {
+    const i18nDir = join(this.config.contentDir, 'i18n');
+    this.translations = new Map();
+    this.chapterTitles = new Map();
+    if (!existsSync(i18nDir)) return;
+
+    for (const locale of LOCALES) {
+      if (locale === DEFAULT_LOCALE) continue;
+      const dir = join(i18nDir, locale);
+      if (!existsSync(dir)) continue;
+
+      const byMission = new Map<string, MissionTranslation>();
+      for (const file of readdirSync(dir)) {
+        if (!file.endsWith('.json')) continue;
+        const parsed: unknown = JSON.parse(readFileSync(join(dir, file), 'utf8'));
+
+        if (file === 'chapters.json') {
+          this.chapterTitles.set(locale, parsed as Record<string, string>);
+          continue;
+        }
+        const translation = parsed as MissionTranslation;
+        if (typeof translation.missionId === 'string') {
+          byMission.set(translation.missionId, translation);
+        }
+      }
+
+      this.translations.set(locale, byMission);
+      this.logger.log(`Loaded ${byMission.size} translation(s) for "${locale}"`);
+    }
+  }
+
+  /** The canonical missions, untranslated. Used where text does not matter. */
   all(): MissionDefinition[] {
     return sortMissions([...this.missions.values()]);
   }
 
-  find(missionId: string): MissionDefinition | undefined {
-    return this.missions.get(missionId);
+  /**
+   * A mission, translated into `locale`.
+   *
+   * The translation only ever replaces text. Flags, task targets and ids come from the
+   * canonical mission, so the language a player chooses cannot change what solves a mission
+   * — and {@link flagMatches} deliberately ignores locale entirely.
+   */
+  find(missionId: string, locale: Locale = DEFAULT_LOCALE): MissionDefinition | undefined {
+    const mission = this.missions.get(missionId);
+    if (mission === undefined) return undefined;
+    if (locale === DEFAULT_LOCALE) return mission;
+    return localiseMission(mission, this.translations.get(locale)?.get(missionId));
+  }
+
+  allIn(locale: Locale): MissionDefinition[] {
+    return this.all().map((mission) => this.find(mission.id, locale) ?? mission);
   }
 
   /**
@@ -78,11 +137,14 @@ export class ContentService {
     return submitted.trim() === expected;
   }
 
-  chapters(): { chapter: number; title: string; missionCount: number }[] {
+  chapters(
+    locale: Locale = DEFAULT_LOCALE,
+  ): { chapter: number; title: string; missionCount: number }[] {
+    const translated = this.chapterTitles.get(locale) ?? {};
     const titles: Record<number, string> = {
-      1: 'Computer',
-      2: 'Network',
-      3: 'Web',
+      1: translated['1'] ?? 'Computer',
+      2: translated['2'] ?? 'Network',
+      3: translated['3'] ?? 'Web',
     };
     const counts = new Map<number, number>();
     for (const mission of this.missions.values()) {

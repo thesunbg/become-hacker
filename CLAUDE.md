@@ -104,6 +104,18 @@ exposed to the browser or to the API's public surface.
 route to the internet or to production. Every lab gets CPU, memory, PID and time limits. These
 are not tunable conveniences — see `docs/06-security.md` before changing any of them.
 
+## Languages
+
+English is canonical; `content/i18n/<locale>/` holds translations, and
+`apps/web/src/i18n/` holds the interface dictionary. Two rules:
+
+- **A translation is text only.** Flags, task targets, ids and XP come from the canonical
+  mission, so a translation can never change an answer. `pnpm content:validate` enforces it.
+- **The dictionary is typed against English**, so a missing string fails the build.
+
+Adding a language is adding files. Details in
+[`docs/04-mission-format.md`](docs/04-mission-format.md).
+
 ## Content safety
 
 All exercises target environments that are **intentionally vulnerable, isolated and game-owned**

@@ -2,10 +2,12 @@ import { useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { Button, ErrorNote, Input } from '../components/ui';
 import { useSession } from '../store/session';
+import { useT } from '../i18n';
 
 /** Sign in and sign up, which are the same form with one extra field. */
 export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
   const { status, signIn, signUp } = useSession();
+  const t = useT();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -26,7 +28,7 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
       else await signIn(email, password);
       navigate('/dashboard', { replace: true });
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'Something went wrong.');
+      setError(caught instanceof Error ? caught.message : t('auth.failed'));
     } finally {
       setBusy(false);
     }
@@ -38,18 +40,13 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
         <h1 className="font-mono text-2xl font-bold tracking-tight">
           ZERO <span className="text-signal">→</span> ROOT
         </h1>
-        <p className="font-mono text-xs tracking-[0.2em] text-muted uppercase">
-          Learn. Hack. Think. Defend.
-        </p>
-        <p className="text-sm leading-relaxed text-muted">
-          A courier left a laptop at your door. No note, no sender. There is no desktop — just a
-          blinking cursor, waiting for you.
-        </p>
+        <p className="font-mono text-xs tracking-[0.2em] text-muted uppercase">{t('tagline')}</p>
+        <p className="text-sm leading-relaxed text-muted">{t('intro')}</p>
       </header>
 
       <form onSubmit={submit} className="space-y-4" noValidate>
         <Input
-          label="Email"
+          label={t('auth.email')}
           type="email"
           autoComplete="email"
           required
@@ -59,50 +56,48 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
 
         {mode === 'register' && (
           <Input
-            label="Handle"
+            label={t('auth.handle')}
             autoComplete="username"
             required
             value={username}
             onChange={(event) => setUsername(event.target.value)}
-            hint="Letters, numbers, underscores and hyphens."
+            hint={t('auth.handleHint')}
           />
         )}
 
         <Input
-          label="Password"
+          label={t('auth.password')}
           type="password"
           autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
           required
           value={password}
           onChange={(event) => setPassword(event.target.value)}
-          {...(mode === 'register'
-            ? { hint: 'At least 12 characters. Length beats punctuation.' }
-            : {})}
+          {...(mode === 'register' ? { hint: t('auth.passwordHint') } : {})}
         />
 
         <ErrorNote>{error}</ErrorNote>
 
         <Button type="submit" disabled={busy} className="w-full">
-          {busy ? 'Working…' : mode === 'register' ? 'Create account' : 'Sign in'}
+          {busy ? t('auth.working') : t(mode === 'register' ? 'auth.createAccount' : 'auth.signIn')}
         </Button>
       </form>
 
       <p className="text-center text-sm text-muted">
         {mode === 'register' ? (
           <>
-            Already have an account?{' '}
+            {t('auth.haveAccount')}{' '}
             <Link
               to={{ pathname: '/login', search: location.search }}
               className="text-info hover:underline"
             >
-              Sign in
+              {t('auth.signIn')}
             </Link>
           </>
         ) : (
           <>
-            First time here?{' '}
+            {t('auth.firstTime')}{' '}
             <Link to="/register" className="text-info hover:underline">
-              Start from zero
+              {t('auth.startFromZero')}
             </Link>
           </>
         )}

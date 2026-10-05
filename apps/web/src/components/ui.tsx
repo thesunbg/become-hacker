@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import type { MissionState } from '@zero-root/types';
+import { useT } from '../i18n';
 
 export function Panel({
   title,
@@ -98,23 +99,23 @@ export function Meter({
   );
 }
 
-const STATE_STYLES: Record<MissionState, { label: string; className: string }> = {
-  LOCKED: { label: 'Locked', className: 'text-muted border-border' },
-  AVAILABLE: { label: 'Available', className: 'text-info border-info/40' },
-  STARTED: { label: 'Started', className: 'text-warn border-warn/40' },
-  IN_PROGRESS: { label: 'In progress', className: 'text-warn border-warn/40' },
-  COMPLETED: { label: 'Complete', className: 'text-signal border-signal/40' },
-  FAILED: { label: 'Failed', className: 'text-danger border-danger/40' },
-  ABANDONED: { label: 'Abandoned', className: 'text-muted border-border' },
+const STATE_STYLES: Record<MissionState, string> = {
+  LOCKED: 'text-muted border-border',
+  AVAILABLE: 'text-info border-info/40',
+  STARTED: 'text-warn border-warn/40',
+  IN_PROGRESS: 'text-warn border-warn/40',
+  COMPLETED: 'text-signal border-signal/40',
+  FAILED: 'text-danger border-danger/40',
+  ABANDONED: 'text-muted border-border',
 };
 
 export function StateBadge({ state }: { state: MissionState }) {
-  const style = STATE_STYLES[state];
+  const t = useT();
   return (
     <span
-      className={`rounded border px-2 py-0.5 font-mono text-[11px] tracking-wider uppercase ${style.className}`}
+      className={`rounded border px-2 py-0.5 font-mono text-[11px] tracking-wider uppercase ${STATE_STYLES[state]}`}
     >
-      {style.label}
+      {t(`state.${state}`)}
     </span>
   );
 }

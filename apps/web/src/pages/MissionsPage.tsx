@@ -4,8 +4,11 @@ import type { MissionListResponse } from '@zero-root/types';
 import { api } from '../lib/api';
 import { stars } from '../lib/format';
 import { Panel, StateBadge } from '../components/ui';
+import { useLocaleStore, useT } from '../i18n';
 
 export function MissionsPage() {
+  const t = useT();
+  const locale = useLocaleStore((state) => state.locale);
   const [data, setData] = useState<MissionListResponse | null>(null);
 
   useEffect(() => {
@@ -13,7 +16,7 @@ export function MissionsPage() {
       .missions()
       .then(setData)
       .catch(() => setData(null));
-  }, []);
+  }, [locale]);
 
   const byChapter = new Map<number, MissionListResponse['missions'][number][]>();
   for (const mission of data?.missions ?? []) {
@@ -24,12 +27,12 @@ export function MissionsPage() {
 
   return (
     <main className="space-y-6">
-      <h1 className="font-mono text-xl font-bold">Missions</h1>
+      <h1 className="font-mono text-xl font-bold">{t('nav.missions')}</h1>
 
       {[...byChapter.entries()].map(([chapter, missions]) => (
         <Panel
           key={chapter}
-          title={`Chapter ${chapter} — ${
+          title={`${t('mission.chapter')} ${chapter} — ${
             data?.chapters.find((c) => c.chapter === chapter)?.title ?? ''
           }`}
         >
@@ -46,7 +49,7 @@ export function MissionsPage() {
                   <span className="min-w-40 flex-1 font-mono text-sm">{mission.title}</span>
                   <span className="font-mono text-xs text-warn">{stars(mission.difficulty)}</span>
                   <span className="font-mono text-xs text-muted">
-                    ~{mission.estimatedMinutes} min
+                    ~{mission.estimatedMinutes} {t('mission.minutes')}
                   </span>
                   <StateBadge state={mission.state} />
                 </div>
@@ -55,7 +58,7 @@ export function MissionsPage() {
               return (
                 <li key={mission.id}>
                   {locked ? (
-                    <div title="Finish what this mission requires first.">{row}</div>
+                    <div title={t('mission.lockedBody')}>{row}</div>
                   ) : (
                     <Link to={`/missions/${mission.id}`} className="block hover:bg-raised/40">
                       {row}

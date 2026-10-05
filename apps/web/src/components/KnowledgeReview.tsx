@@ -1,5 +1,6 @@
 import type { PublicMission } from '@zero-root/types';
 import { Panel } from './ui';
+import { useT } from '../i18n';
 
 /**
  * The knowledge review.
@@ -9,10 +10,11 @@ import { Panel } from './ui';
  * complete, because the real-world mapping would otherwise give the answer away.
  */
 export function KnowledgeReview({ mission }: { mission: PublicMission }) {
+  const t = useT();
   if (mission.knowledge.length === 0) return null;
 
   return (
-    <Panel title="What you just learned">
+    <Panel title={t('knowledge.title')}>
       <ul className="space-y-6">
         {mission.knowledge.map((entry) => (
           <li key={entry.concept} className="space-y-2">

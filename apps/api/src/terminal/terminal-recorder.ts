@@ -33,6 +33,8 @@ export interface RecordedCommand {
 export const MAX_OUTPUT_CHARS = 64 * 1024;
 /** A pathological input line is capped too. */
 export const MAX_LINE_CHARS = 4 * 1024;
+/** Only the tail of the echo matters — the line being typed — so the rest can be dropped. */
+export const MAX_ECHO_CHARS = 8 * 1024;
 
 const CTRL_C = '\u0003';
 const CTRL_U = '\u0015';
@@ -51,6 +53,15 @@ export function stripAnsi(text: string): string {
     .replace(/\u001b[@-Z\\-_]/g, '');
 }
 
+/** True when every character of `needle` appears in `haystack`, in order. */
+function isSubsequence(needle: string, haystack: string): boolean {
+  let index = 0;
+  for (const char of haystack) {
+    if (index < needle.length && char === needle[index]) index++;
+  }
+  return index === needle.length;
+}
+
 export class TerminalRecorder {
   private line = '';
   private pendingCommand: string | null = null;
@@ -58,6 +69,8 @@ export class TerminalRecorder {
   private truncated = false;
   private settled = false;
   private escape: 'none' | 'after-esc' | 'csi' | 'osc' = 'none';
+  /** Everything the shell has echoed since the last command was submitted. */
+  private echo = '';
 
   /**
    * Feeds keystrokes from the player.
@@ -85,8 +98,10 @@ export class TerminalRecorder {
 
         case '\r':
         case '\n': {
-          const submitted = this.line.trim();
+          const typed = this.line.trim();
+          const submitted = this.commandFromEcho(typed) ?? typed;
           this.line = '';
+          this.echo = '';
           if (submitted === '') break;
 
           const finished = this.submit(submitted);
@@ -121,6 +136,34 @@ export class TerminalRecorder {
     }
 
     return completed;
+  }
+
+  /**
+   * Reconstructs the command from what the shell echoed back.
+   *
+   * Keystrokes alone are not what the shell will run. Tab completion turns `cat REA` into
+   * `cat README.txt`, and pressing Up recalls a whole command without a single character
+   * being typed — both are how people actually use a shell, and reading the keystrokes
+   * silently misses the first and records nothing at all for the second. The shell is the
+   * authority on its own input, and it tells us by echoing.
+   *
+   * The command is whatever follows the last prompt marker on the current line. `typed` is
+   * the sanity check: every character the player pressed must appear, in order, within the
+   * candidate, because completion and recall only ever produce a superset of what was typed.
+   * Where that does not hold — a command containing a literal `$ `, say — the typed line is
+   * trusted instead.
+   */
+  private commandFromEcho(typed: string): string | null {
+    const lines = stripAnsi(this.echo).split(/\r?\n/);
+    const lastLine = lines[lines.length - 1] ?? '';
+
+    // Greedy, so it finds the *last* prompt on the line.
+    const match = /^.*[$#>]\s(.*)$/.exec(lastLine);
+    if (match === null) return null;
+
+    const candidate = (match[1] ?? '').trim();
+    if (candidate === '' || !isSubsequence(typed, candidate)) return null;
+    return candidate;
   }
 
   /** Advances the escape-sequence state machine by one byte. */
@@ -158,11 +201,16 @@ export class TerminalRecorder {
     this.buffer = '';
     this.truncated = false;
     this.settled = false;
+    this.echo = '';
     return finished;
   }
 
   /** Feeds bytes coming back from the container. */
   onOutput(data: string): void {
+    // Collected unconditionally, including before the first command: the prompt and the echo
+    // of the line being typed both arrive this way, and `commandFromEcho` needs them.
+    this.echo = (this.echo + data).slice(-MAX_ECHO_CHARS);
+
     // Before the first command there is only the shell banner; after settling, the record
     // for that command is already closed.
     if (this.pendingCommand === null || this.settled) return;

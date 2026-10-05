@@ -95,6 +95,53 @@ calculate score · unlock hints · complete mission · award XP
 It is a pure function of (mission definition, event stream, player state) → (progress, score,
 rewards). Keeping it pure is what makes it testable and what keeps scoring on the server.
 
+## Languages
+
+Translations are data too. Adding a language means adding files under
+`content/i18n/<locale>/`, never editing a component or an API module:
+
+```
+content/i18n/vi/
+  chapters.json          chapter titles, keyed by chapter number
+  ch01-mission-001.json  one file per mission
+```
+
+A translation carries **text only**:
+
+```json
+{
+  "missionId": "ch01-mission-001",
+  "title": "Khởi đầu",
+  "story": "...",
+  "objective": "...",
+  "tasks": { "identify-user": "..." },
+  "hints": { "1": "...", "2": "..." },
+  "knowledge": [{ "concept": "...", "explanation": "...", "realWorld": "..." }]
+}
+```
+
+The canonical mission stays the only source of everything that decides whether a player is
+right — the flag, every task `target`, every id, every XP value. `localiseMission` reads a
+whitelist of text fields and nothing else, so **a translation cannot change an answer**, unlock
+a mission, or make a hint cheaper. `pnpm content:validate` rejects a translation file that
+names a flag, a target or an id, and reports one that has drifted out of alignment with the
+mission it translates.
+
+Untranslated fields fall back to the original one by one, so a half-finished language shows
+translated text where it exists and English everywhere else rather than blanks. The validator
+warns about what is still missing.
+
+The interface has its own dictionary in `apps/web/src/i18n/`, typed against English, so a
+language missing a string is a compile error rather than a blank space in production. The
+client sends its choice as `x-locale`; the API honours that first and the browser's
+`Accept-Language` second.
+
+**Known gap:** the files inside a lab image — `README.txt`, `.null/first_contact` — are part of
+the sandbox filesystem, not of the mission JSON, and are still English in every language.
+Localising them means per-locale lab images, which also changes what a mission's `target`
+points at. Command output being English is realistic; the story files are not, so this is worth
+doing properly rather than quickly.
+
 ## Event system
 
 Every meaningful player action emits an event. Events are the engine's only input, and the

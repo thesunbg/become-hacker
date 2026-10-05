@@ -1,0 +1,35 @@
+{
+  "missionId": "ch01-mission-002",
+  "title": "Tìm bí mật",
+  "story": "README kết thúc giữa chừng một câu:\n\n  \"Nếu bạn muốn hiểu Internet, hãy thôi dùng nó như một người dùng bình thường.\n   Tôi đã để lại cho bạn một thứ. Người dùng bình thường sẽ không bao giờ thấy nó.\"\n\nBạn liệt kê thư mục home. Ba tệp nhạt nhẽo. Không có gì khác.\n\nVậy thì hoặc người gửi nói dối, hoặc 'người dùng bình thường sẽ không bao giờ thấy nó' là một lời chỉ dẫn chứ không phải một lời khoe khoang.",
+  "objective": "Có thứ gì đó trong thư mục home mà một lệnh liệt kê thông thường không cho bạn thấy. Hãy tìm nó, đọc nó, và lấy được flag bên trong.",
+  "tasks": {
+    "list-all": "Liệt kê nội dung thư mục home theo cách hiển thị mọi thứ.",
+    "find-hidden": "Tìm và đọc tệp đã bị giấu khỏi bạn.",
+    "submit-flag": "Nộp flag bạn tìm được.",
+    "search-by-name": "Thưởng: tìm trong hệ thống tệp bằng tên thay vì duyệt thủ công."
+  },
+  "hints": {
+    "1": "Người gửi nói người dùng bình thường sẽ không bao giờ thấy nó. Không phải nó được mã hoá, cũng không phải nó ở xa — chỉ là không được nhìn thấy. Điều gì làm một tệp trở nên vô hình trong danh sách?",
+    "2": "Linux không có thuộc tính 'ẩn' đặc biệt nào. Nó dùng một quy ước đặt tên: tên tệp bắt đầu bằng dấu chấm sẽ bị bỏ qua khi liệt kê mặc định. Công cụ của bạn có thể được yêu cầu thôi bỏ qua chúng.",
+    "3": "`ls` giấu dotfile; `ls -a` hiện chúng, và `ls -la` hiện kèm chi tiết. Hãy tìm một thư mục có tên bắt đầu bằng dấu chấm.",
+    "4": "Chạy `ls -la` trong /home/player. Bạn sẽ thấy một thư mục tên `.null`. Vào bằng `cd .null`, liệt kê nó, rồi đọc tệp bên trong bằng `cat`."
+  },
+  "knowledge": [
+    {
+      "concept": "Tệp ẩn là một quy ước, không phải một biện pháp bảo mật",
+      "explanation": "Dấu chấm đứng đầu chỉ là lời đề nghị công cụ lịch sự đừng làm rối danh sách của bạn. Chỉ có vậy thôi. Tệp đó không được bảo vệ, không được mã hoá, không khó đọc hơn chút nào — nó chỉ không được liệt kê mặc định. Bất cứ thứ gì trông cậy vào dấu chấm để giữ bí mật là đang trông cậy vào việc không ai thèm nhìn.",
+      "realWorld": "Trò chơi: tìm tệp ẩn → Bảo mật: bảo mật bằng che giấu → Thực tế: các thư mục .env, .git và .ssh bị bỏ quên trên web server làm rò rỉ thông tin đăng nhập và mã nguồn liên tục, chính vì 'ẩn' bị nhầm thành 'an toàn'."
+    },
+    {
+      "concept": "Đầu ra mặc định là một góc nhìn đã bị lọc",
+      "explanation": "Gần như mọi công cụ đều cho bạn thấy một tập con tiện lợi của sự thật và bỏ đi phần còn lại mà không nói gì. Học những tuỳ chọn gỡ bỏ bộ lọc đó chính là phần lớn khác biệt giữa nhìn thấy và chỉ nhìn.",
+      "realWorld": "Trò chơi: ls so với ls -la → Bảo mật: tính đầy đủ khi liệt kê → Thực tế: một bài đánh giá chỉ báo cáo những gì công cụ hiện mặc định sẽ bỏ sót đúng những phát hiện quan trọng."
+    },
+    {
+      "concept": "Tìm kiếm hơn duyệt thủ công",
+      "explanation": "Đi bộ qua cây thư mục bằng tay thì được với một thư mục home, và thất bại với cả một hệ thống tệp. `find` cho phép bạn nói rõ mình đang tìm gì rồi để máy đi bộ thay.",
+      "realWorld": "Trò chơi: tìm theo tên → Bảo mật: trinh sát hệ thống tệp → Thực tế: định vị thông tin đăng nhập, bản sao lưu và tệp cấu hình đặt nhầm chỗ ở quy mô lớn."
+    }
+  ]
+}

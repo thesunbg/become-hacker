@@ -8,13 +8,15 @@ import { MissionPage } from './pages/MissionPage';
 import { MissionsPage } from './pages/MissionsPage';
 import { SkillsPage } from './pages/SkillsPage';
 import { useSession } from './store/session';
+import { useT } from './i18n';
 
 /** Routes that need a session. The server enforces this too; this only avoids a flash. */
 function RequireSession({ children }: { children: React.ReactNode }) {
   const status = useSession((state) => state.status);
+  const t = useT();
 
   if (status === 'unknown') {
-    return <p className="p-8 font-mono text-sm text-muted">Checking your session…</p>;
+    return <p className="p-8 font-mono text-sm text-muted">{t('auth.checking')}</p>;
   }
   if (status === 'signed-out') return <Navigate to="/login" replace />;
   return <>{children}</>;

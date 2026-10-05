@@ -17,9 +17,11 @@ import type {
   PublicMission,
   SubmitFlagResponse,
 } from '@zero-root/types';
+import type { Locale } from '@zero-root/types';
 import { toPublicMission, withoutKnowledge } from '@zero-root/types';
 import { nextHint, revealedHints } from '@zero-root/mission-engine';
 import { AuthGuard, type AuthenticatedRequest } from '../auth/auth.guard';
+import { ReqLocale } from '../common/locale.decorator';
 import { ContentService } from '../content/content.service';
 import { EventsService } from '../events/events.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -45,11 +47,11 @@ export class MissionsController {
   ) {}
 
   @Get('chapters')
-  async chapters(@Req() req: AuthenticatedRequest) {
+  async chapters(@Req() req: AuthenticatedRequest, @ReqLocale() locale: Locale) {
     const userId = req.userId as string;
     const completed = new Set(await this.progress.completedMissionIds(userId));
     return {
-      chapters: this.content.chapters().map((chapter) => ({
+      chapters: this.content.chapters(locale).map((chapter) => ({
         ...chapter,
         completedCount: this.content
           .all()
@@ -60,13 +62,16 @@ export class MissionsController {
   }
 
   @Get('missions')
-  async list(@Req() req: AuthenticatedRequest): Promise<MissionListResponse> {
+  async list(
+    @Req() req: AuthenticatedRequest,
+    @ReqLocale() locale: Locale,
+  ): Promise<MissionListResponse> {
     const userId = req.userId as string;
     const completedIds = await this.progress.completedMissionIds(userId);
     const completed = new Set(completedIds);
 
     const missions: PublicMission[] = [];
-    for (const mission of this.content.all()) {
+    for (const mission of this.content.allIn(locale)) {
       if (!(await this.registry.isPublished(mission.id))) continue;
 
       const state = await this.progress.stateFor(userId, mission.id);
@@ -79,7 +84,7 @@ export class MissionsController {
       missions.push(state === 'COMPLETED' ? published : withoutKnowledge(published));
     }
 
-    const chapters = this.content.chapters().map((chapter) => ({
+    const chapters = this.content.chapters(locale).map((chapter) => ({
       ...chapter,
       completedCount: this.content
         .all()
@@ -94,9 +99,10 @@ export class MissionsController {
   async detail(
     @Req() req: AuthenticatedRequest,
     @Param('id') missionId: string,
+    @ReqLocale() locale: Locale,
   ): Promise<MissionDetailResponse> {
     const userId = req.userId as string;
-    const mission = this.content.find(missionId);
+    const mission = this.content.find(missionId, locale);
     if (mission === undefined || !(await this.registry.isPublished(missionId))) {
       throw new NotFoundException(`Unknown mission "${missionId}".`);
     }
@@ -146,9 +152,10 @@ export class MissionsController {
   async hint(
     @Req() req: AuthenticatedRequest,
     @Param('id') missionId: string,
+    @ReqLocale() locale: Locale,
   ): Promise<HintResponse> {
     const userId = req.userId as string;
-    const mission = this.content.find(missionId);
+    const mission = this.content.find(missionId, locale);
     if (mission === undefined || !(await this.registry.isPublished(missionId))) {
       throw new NotFoundException(`Unknown mission "${missionId}".`);
     }

@@ -116,6 +116,125 @@ describe('TerminalRecorder — assembling a line from keystrokes', () => {
   });
 });
 
+describe('TerminalRecorder — how people actually use a shell', () => {
+  const PROMPT = 'player@laptop:~$ ';
+
+  /** Plays a session the way a PTY does: the shell echoes everything back. */
+  function session() {
+    const recorder = new TerminalRecorder();
+    recorder.onOutput(PROMPT);
+    return {
+      recorder,
+      /** Types characters; the shell echoes each one. */
+      type(text: string) {
+        for (const char of text) {
+          recorder.onInput(char);
+          recorder.onOutput(char);
+        }
+      },
+      /** Presses Tab; the shell echoes the rest of the completion. */
+      tab(completion: string) {
+        recorder.onInput('\t');
+        recorder.onOutput(completion);
+      },
+      /** Presses Up; the shell echoes the whole recalled command. */
+      up(recalled: string) {
+        recorder.onInput('\u001b[A');
+        recorder.onOutput(recalled);
+      },
+      enter() {
+        const done = recorder.onInput('\r');
+        recorder.onOutput('\r\n');
+        return done;
+      },
+    };
+  }
+
+  it('records the completed command when Tab was used, not the few letters typed', () => {
+    // This is what broke mission 01 in practice: `cat REA<Tab>` reads the file, and the
+    // objective never ticked because `cat REA` was what got recorded.
+    const s = session();
+    s.type('cat REA');
+    s.tab('DME.txt');
+    s.enter();
+    s.recorder.onOutput('If you are reading this…\r\n' + PROMPT);
+
+    expect(s.recorder.settle()?.command).toBe('cat README.txt');
+  });
+
+  it('records a command recalled with the Up arrow, which types nothing at all', () => {
+    const s = session();
+    s.up('cat README.txt');
+    s.enter();
+    s.recorder.onOutput('If you are reading this…\r\n' + PROMPT);
+
+    expect(s.recorder.settle()?.command).toBe('cat README.txt');
+  });
+
+  it('records a plain typed command unchanged', () => {
+    const s = session();
+    s.type('whoami');
+    s.enter();
+    s.recorder.onOutput('player\r\n' + PROMPT);
+
+    expect(s.recorder.settle()?.command).toBe('whoami');
+  });
+
+  it('keeps working for the second command, after a prompt has been reprinted', () => {
+    const s = session();
+    s.type('whoami');
+    s.enter();
+    s.recorder.onOutput('player\r\n' + PROMPT);
+    s.recorder.settle();
+
+    s.type('ls -');
+    s.tab('la');
+    s.enter();
+    s.recorder.onOutput('README.txt\r\n' + PROMPT);
+
+    expect(s.recorder.settle()?.command).toBe('ls -la');
+  });
+
+  it('honours a backspace that the shell echoed away', () => {
+    const s = session();
+    s.type('cat READMEX');
+    s.recorder.onInput('\u007f');
+    s.recorder.onOutput('\b \b');
+    s.recorder.onInput('.');
+    s.recorder.onOutput('.');
+    s.type('txt');
+    s.enter();
+
+    // The echo still contains the backspaced characters, so the typed line wins the check.
+    expect(s.recorder.settle()?.command).toContain('cat README');
+  });
+
+  it('trusts the typed line when the command itself contains a prompt-like marker', () => {
+    const s = session();
+    s.type('echo "costs $ 5"');
+    s.enter();
+    s.recorder.onOutput('costs $ 5\r\n' + PROMPT);
+
+    // Splitting on the last `$ ` would give `5"`, which the typed line is not a subsequence
+    // of, so the keystrokes are used instead.
+    expect(s.recorder.settle()?.command).toBe('echo "costs $ 5"');
+  });
+
+  it('falls back to the keystrokes when nothing was echoed at all', () => {
+    // A shell with echo off, or output that has not arrived yet.
+    const recorder = new TerminalRecorder();
+    recorder.onInput('whoami\r');
+    recorder.onOutput('player');
+
+    expect(recorder.settle()?.command).toBe('whoami');
+  });
+
+  it('still ignores a bare Enter at an empty prompt', () => {
+    const s = session();
+    expect(s.enter()).toEqual([]);
+  });
+});
+
 describe('TerminalRecorder — attributing output to commands', () => {
   it('banks a command with the output that followed it', () => {
     const recorder = new TerminalRecorder();

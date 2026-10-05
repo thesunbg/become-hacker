@@ -1,3 +1,4 @@
+import { currentLocale } from '../i18n';
 import type {
   CreateLabResponse,
   HintResponse,
@@ -30,7 +31,12 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
   const response = await fetch(path, {
     method,
     credentials: 'include',
-    headers: body === undefined ? {} : { 'content-type': 'application/json' },
+    headers: {
+      // Mission text is rendered server-side from content, so the API has to be told which
+      // language the interface is showing or the two would disagree.
+      'x-locale': currentLocale(),
+      ...(body === undefined ? {} : { 'content-type': 'application/json' }),
+    },
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
   });
 
