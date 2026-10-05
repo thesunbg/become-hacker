@@ -16,6 +16,13 @@ export interface AppConfig {
   readonly sessionSecret: string;
   readonly sessionCookieName: string;
   readonly sessionTtlSeconds: number;
+  /**
+   * Whether the session cookie is marked `Secure`, so the browser only ever sends it over
+   * HTTPS. On by default in production. It exists as an escape hatch for testing a VPS by IP
+   * before a certificate is in place — with no TLS and this left on, the browser silently
+   * discards the cookie and sign-in appears to fail for no reason.
+   */
+  readonly sessionCookieSecure: boolean;
   readonly contentDir: string;
   readonly labManagerUrl: string;
   readonly labManagerToken: string;
@@ -64,6 +71,10 @@ export function loadAppConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     sessionSecret: sessionSecret === '' ? DEV_SESSION_SECRET : sessionSecret,
     sessionCookieName: env.SESSION_COOKIE_NAME ?? 'zr_session',
     sessionTtlSeconds: Number.parseInt(env.SESSION_TTL_SECONDS ?? '86400', 10),
+    sessionCookieSecure:
+      env.SESSION_COOKIE_SECURE === undefined
+        ? nodeEnv === 'production'
+        : env.SESSION_COOKIE_SECURE !== 'false',
     contentDir: env.CONTENT_DIR ?? `${process.cwd()}/../../content`,
     labManagerUrl: env.LAB_MANAGER_URL ?? 'http://127.0.0.1:3002',
     labManagerToken: env.LAB_MANAGER_TOKEN ?? 'development-only-token',

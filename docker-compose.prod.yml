@@ -1,0 +1,166 @@
+# ZERO -> ROOT — the whole game on one VPS.
+#
+#   docker compose -f docker-compose.prod.yml --profile labs build
+#   docker compose -f docker-compose.prod.yml up -d
+#
+# Copy .env.prod.example to .env and fill it in first. See docs/09-deployment.md.
+#
+# The network layout is the security model, not an implementation detail:
+#
+#   edge      caddy  <-> game                 the only thing the internet can reach
+#   app       game   <-> postgres, redis, lab-manager
+#   lab       (internal, no gateway)          where player sandboxes live
+#
+# Postgres, Redis and the lab manager publish no ports at all. They are reachable by service
+# name on the app network and from nowhere else.
+
+name: zeroroot
+
+services:
+  # --------------------------------------------------------------------- edge
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - '80:80'
+      - '443:443'
+      - '443:443/udp'
+    environment:
+      # Caddy obtains and renews a certificate for this name automatically. The session
+      # cookie is marked Secure, so without HTTPS the browser discards it and sign-in fails.
+      DOMAIN: ${DOMAIN:?set DOMAIN in .env, or run the http-only profile instead}
+    volumes:
+      - ./infrastructure/docker/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    networks:
+      - edge
+    depends_on:
+      game:
+        condition: service_started
+    profiles: ['https']
+
+  # --------------------------------------------------------------------- game
+  game:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: zeroroot/game:latest
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://zeroroot:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@postgres:5432/zeroroot
+      REDIS_URL: redis://redis:6379
+      SESSION_SECRET: ${SESSION_SECRET:?set SESSION_SECRET to 32+ characters}
+      WEB_ORIGIN: ${WEB_ORIGIN:?set WEB_ORIGIN, e.g. https://play.example.com}
+      # Leave unset in normal operation. See .env.prod.example.
+      SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-true}
+      LAB_MANAGER_URL: http://lab-manager:3002
+      LAB_MANAGER_TOKEN: ${LAB_MANAGER_TOKEN:?set LAB_MANAGER_TOKEN}
+    # Bound to loopback: Caddy reaches it over the edge network, and nothing else should.
+    # Drop this mapping entirely once you are behind the proxy.
+    ports:
+      - '127.0.0.1:8080:3001'
+    networks:
+      - edge
+      - app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # -------------------------------------------------------------- lab manager
+  lab-manager:
+    build:
+      context: .
+      dockerfile: apps/lab-manager/Dockerfile
+    image: zeroroot/lab-manager:latest
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      LAB_MANAGER_TOKEN: ${LAB_MANAGER_TOKEN:?set LAB_MANAGER_TOKEN}
+      # Must listen on all interfaces to be reachable by service name; it publishes no port,
+      # so "all interfaces" means the app network and nothing beyond it.
+      LAB_MANAGER_HOST: 0.0.0.0
+      LAB_NETWORK: zeroroot-lab
+      LAB_CPU_LIMIT: ${LAB_CPU_LIMIT:-1}
+      LAB_MEMORY_LIMIT: ${LAB_MEMORY_LIMIT:-512m}
+      LAB_PIDS_LIMIT: ${LAB_PIDS_LIMIT:-128}
+      LAB_SESSION_TIMEOUT_SECONDS: ${LAB_SESSION_TIMEOUT_SECONDS:-3600}
+    volumes:
+      # This is the host's Docker daemon. A process holding it can control every container on
+      # this machine, which is why this service runs nothing else, publishes no port, and
+      # should not share a host with anything you care about. The sandboxes it creates hold
+      # none of this power — see apps/lab-manager/src/sandbox-spec.ts.
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - app
+    depends_on:
+      lab-image:
+        condition: service_completed_successfully
+
+  # The sandbox image, built onto the host so the lab manager can start containers from it.
+  # Not a running service: it builds, exits, and the lab manager waits for that to finish.
+  #
+  # It also attaches to the lab network, which is the only reason that network gets created.
+  # Compose prunes any network no service references, so declaring `lab` below is not enough
+  # on its own — without this the lab manager would try to attach sandboxes to a network that
+  # does not exist.
+  lab-image:
+    build:
+      context: ./labs/linux-basic
+    image: zeroroot/linux-basic:latest
+    command: ['true']
+    restart: 'no'
+    networks:
+      - lab
+
+  # ------------------------------------------------------------------- stores
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: zeroroot
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      POSTGRES_DB: zeroroot
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - app
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U zeroroot -d zeroroot']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    # Sessions and rate-limit counters only; losing them signs players out and costs nothing
+    # else, so there is no reason to pay for persistence.
+    command: ['redis-server', '--save', '', '--appendonly', 'no']
+    networks:
+      - app
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+networks:
+  edge:
+    name: zeroroot-edge
+  app:
+    name: zeroroot-app
+  # Declared here so it exists before the lab manager attaches containers to it. `internal`
+  # means Docker gives it no gateway, so a lab has no route to the internet, to this host, or
+  # to the database — docs/06-security.md.
+  lab:
+    name: zeroroot-lab
+    internal: true
+
+volumes:
+  postgres-data:
+  caddy-data:
+  caddy-config:

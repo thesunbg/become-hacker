@@ -1,0 +1,30 @@
+# TLS termination for ZERO -> ROOT.
+#
+# Caddy obtains and renews a Let's Encrypt certificate for $DOMAIN automatically. HTTPS is not
+# optional here: the session cookie is marked Secure, so over plain HTTP the browser discards
+# it and every sign-in silently fails.
+
+{$DOMAIN} {
+	encode zstd gzip
+
+	# Proxies HTTP and the terminal's WebSocket upgrade alike; Caddy handles upgrades without
+	# any extra configuration.
+	reverse_proxy game:3001 {
+		header_up X-Forwarded-For {remote_host}
+		header_up X-Forwarded-Proto {scheme}
+	}
+
+	header {
+		# The game renders no third-party content and is never framed.
+		X-Frame-Options "DENY"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "same-origin"
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		-Server
+	}
+
+	log {
+		output stdout
+		format console
+	}
+}

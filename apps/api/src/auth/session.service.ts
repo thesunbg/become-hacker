@@ -108,8 +108,7 @@ export class SessionService {
     return {
       httpOnly: true,
       sameSite: 'strict',
-      // Secure in production; a local dev server is plain HTTP.
-      secure: this.config.nodeEnv === 'production',
+      secure: this.config.sessionCookieSecure,
       path: '/',
       maxAge: this.config.sessionTtlSeconds * 1000,
     };

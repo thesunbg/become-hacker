@@ -64,6 +64,13 @@ async function bootstrap(): Promise<void> {
   // Harmless when the client is same-origin, and still correct if it is ever split out.
   app.enableCors({ origin: config.webOrigin, credentials: true });
 
+  if (config.nodeEnv === 'production' && !config.sessionCookieSecure) {
+    logger.warn(
+      'SESSION_COOKIE_SECURE=false: the session cookie will travel over plain HTTP. ' +
+        'Use this only to reach a server by IP before its certificate exists.',
+    );
+  }
+
   serveWebClient(app, config.webRoot, logger);
 
   // The terminal shares the HTTP server but not the Express pipeline: it is a raw upgrade.

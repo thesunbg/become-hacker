@@ -70,6 +70,53 @@ docker run -p 8080:3001 \
   zeroroot/game
 ```
 
+## Everything on one VPS
+
+[`docker-compose.prod.yml`](../docker-compose.prod.yml) runs the whole game — Caddy, the game
+service, the lab manager, Postgres and Redis — on a single machine with Docker.
+
+```bash
+git clone <this repo> && cd become-hacker
+cp .env.prod.example .env            # then fill it in
+docker compose -f docker-compose.prod.yml --profile https build
+docker compose -f docker-compose.prod.yml --profile https up -d
+```
+
+Point `DOMAIN` at the server **before** starting: Caddy obtains a Let's Encrypt certificate on
+first run, and HTTPS is not optional here. The session cookie is marked `Secure`, so over plain
+HTTP the browser discards it and every sign-in fails with no visible error. To reach the server
+by IP before DNS exists, set `SESSION_COOKIE_SECURE=false` and omit `--profile https` — then put
+it back the moment you have a certificate, because that setting sends the session cookie in
+clear text where anyone on the path can replay it.
+
+### How the networks are arranged
+
+```
+  internet ──▶ caddy ──▶ game ──▶ postgres · redis · lab-manager
+                                                      │
+                                            ┌─────────▼─────────┐
+                                            │  zeroroot-lab     │  internal: no gateway
+                                            │  player sandboxes │
+                                            └───────────────────┘
+```
+
+Postgres, Redis and the lab manager publish **no ports**. They are reachable by service name
+within the compose network and from nowhere else; only Caddy is exposed. The lab network is
+`internal`, so Docker gives it no gateway and a sandbox has no route to the internet, to the
+host, or to the database.
+
+One subtlety worth knowing if you edit the file: the `lab-image` service attaches to the lab
+network, and that is the only reason the network gets created. Compose prunes any network no
+service references, so declaring it is not enough on its own — without that attachment the lab
+manager would try to put sandboxes on a network that does not exist.
+
+### Sizing
+
+Each sandbox may use up to `LAB_CPU_LIMIT` CPU and `LAB_MEMORY_LIMIT` memory, clamped to the
+bounds in [`06-security.md`](06-security.md). Size the machine by how many players will be in a
+lab at once, not by how many accounts exist. A 2 vCPU / 4 GB VPS comfortably holds a handful of
+concurrent labs at the defaults.
+
 ## Deploying the lab manager
 
 This needs a machine you control: a VPS with Docker installed.
@@ -105,11 +152,15 @@ Three things about that command are load-bearing:
 Each lab is allowed up to 1 CPU and 512 MB, so size the VPS by how many players you expect at
 once, not by how many accounts exist.
 
-## The simplest arrangement
+## Which arrangement to choose
 
-One VPS with Docker running everything through `docker compose`, with Postgres and Redis as
-containers. No cookie problems, no split networking, no platform that cannot run your sandboxes.
-Reach for a PaaS when you want the game service managed, and keep a VPS for the labs.
+**One VPS** (above) is the simplest thing that actually works: no cookie problems, no split
+networking, and the sandboxes run where they can. Start here.
+
+**A PaaS for the game service plus a VPS for the labs** makes sense once you want the database
+and the web tier managed. Deploy the image to Railway as above, run the lab manager on the VPS,
+and point `LAB_MANAGER_URL` at it over a private network or a tunnel — never over the public
+internet, and never without the shared token.
 
 ## What is not here yet
 
