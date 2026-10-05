@@ -2,7 +2,7 @@
   "name": "zero-root",
   "version": "0.0.0",
   "private": true,
-  "description": "ZERO -> ROOT — a story-driven web game that teaches cybersecurity by making players investigate instead of read.",
+  "description": "ZERO -> ROOT \u2014 a story-driven web game that teaches cybersecurity by making players investigate instead of read.",
   "packageManager": "pnpm@10.28.0",
   "engines": {
     "node": ">=22"
@@ -20,5 +20,10 @@
   "devDependencies": {
     "turbo": "^2.3.3",
     "typescript": "^5.7.2"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
   }
 }
