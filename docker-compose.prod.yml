@@ -28,7 +28,13 @@ services:
     environment:
       # Caddy obtains and renews a certificate for this name automatically. The session
       # cookie is marked Secure, so without HTTPS the browser discards it and sign-in fails.
-      DOMAIN: ${DOMAIN:?set DOMAIN in .env, or run the http-only profile instead}
+      #
+      # Defaulted rather than required, because Compose interpolates every service's variables
+      # even when a profile excludes the service — a `:?` guard here would break the
+      # domain-less mode, which never starts Caddy at all. scripts/deploy.sh is what ensures a
+      # real domain is set before enabling the https profile; falling back to localhost gets a
+      # self-signed certificate, which is visibly wrong rather than silently broken.
+      DOMAIN: ${DOMAIN:-localhost}
     volumes:
       - ./infrastructure/docker/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy-data:/data
@@ -57,10 +63,11 @@ services:
       SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-true}
       LAB_MANAGER_URL: http://lab-manager:3002
       LAB_MANAGER_TOKEN: ${LAB_MANAGER_TOKEN:?set LAB_MANAGER_TOKEN}
-    # Bound to loopback: Caddy reaches it over the edge network, and nothing else should.
-    # Drop this mapping entirely once you are behind the proxy.
+    # Behind Caddy this stays on loopback and only the proxy reaches it. Reaching the server
+    # by IP, before a domain exists, needs GAME_BIND=0.0.0.0 — which also means no TLS, so
+    # see SESSION_COOKIE_SECURE in .env.prod.example before doing that.
     ports:
-      - '127.0.0.1:8080:3001'
+      - '${GAME_BIND:-127.0.0.1}:${GAME_PORT:-8080}:3001'
     networks:
       - edge
       - app

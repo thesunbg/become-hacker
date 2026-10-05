@@ -76,7 +76,28 @@ docker run -p 8080:3001 \
 service, the lab manager, Postgres and Redis — on a single machine with Docker.
 
 ```bash
-git clone <this repo> && cd become-hacker
+git clone https://github.com/thesunbg/become-hacker && cd become-hacker
+./scripts/deploy.sh play.example.com
+```
+
+[`scripts/deploy.sh`](../scripts/deploy.sh) checks the machine before it builds anything —
+Docker, Compose, enough memory, free ports, and whether the domain actually resolves here —
+then generates `.env` with fresh secrets, builds, starts, and waits until the API answers. It is
+idempotent, and it never overwrites an existing `.env`, so re-running it is how you deploy an
+update:
+
+```bash
+git pull && ./scripts/deploy.sh play.example.com
+```
+
+To check the deployment works before a domain exists, `./scripts/deploy.sh --no-domain` serves
+over plain HTTP on port 80. It prints a warning because it means the session cookie travels in
+clear text, where anyone on the network path can read it and sign in as that player. Point a
+domain at the server and re-run with it as soon as you can.
+
+Doing it by hand instead:
+
+```bash
 cp .env.prod.example .env            # then fill it in
 docker compose -f docker-compose.prod.yml --profile https build
 docker compose -f docker-compose.prod.yml --profile https up -d
@@ -105,10 +126,16 @@ within the compose network and from nowhere else; only Caddy is exposed. The lab
 `internal`, so Docker gives it no gateway and a sandbox has no route to the internet, to the
 host, or to the database.
 
-One subtlety worth knowing if you edit the file: the `lab-image` service attaches to the lab
-network, and that is the only reason the network gets created. Compose prunes any network no
-service references, so declaring it is not enough on its own — without that attachment the lab
-manager would try to put sandboxes on a network that does not exist.
+Two subtleties worth knowing if you edit the compose file:
+
+- **The `lab-image` service attaches to the lab network, and that is the only reason the network
+  gets created.** Compose prunes any network no service references, so declaring it is not
+  enough on its own — without that attachment the lab manager would try to put sandboxes on a
+  network that does not exist.
+- **Compose interpolates every service's variables, even ones a profile excludes.** So a
+  `${VAR:?...}` guard on the Caddy service would break the domain-less mode, which never starts
+  Caddy at all. `DOMAIN` is defaulted rather than required for exactly that reason; the deploy
+  script is what guarantees a real one before enabling HTTPS.
 
 ### Sizing
 

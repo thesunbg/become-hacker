@@ -94,7 +94,7 @@ the `SameSite=Strict` session cookie work, since platform hostnames like `*.up.r
 public suffixes and would otherwise count as separate sites.
 
 ```bash
-docker build -t zeroroot/game .     # builds packages, web and api; migrates on start
+./scripts/deploy.sh play.example.com   # on a VPS with Docker: builds and starts everything
 ```
 
 `apps/lab-manager` is deliberately not in that image: it needs a Docker daemon to create
