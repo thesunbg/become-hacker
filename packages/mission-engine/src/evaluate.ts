@@ -248,9 +248,12 @@ export function evaluateMission(
     state = 'COMPLETED';
   } else if (terminal !== undefined) {
     state = terminal;
-  } else if (started === undefined) {
+  } else if (relevant.length === 0) {
     state = 'AVAILABLE';
-  } else if (relevant.length > 1) {
+  } else if (started === undefined || relevant.length > 1) {
+    // Any recorded activity means the mission is under way. A player who submits a flag or
+    // buys a hint without a start event on record has still begun, and reporting that as
+    // AVAILABLE would describe a mission they have already touched as untouched.
     state = 'IN_PROGRESS';
   } else {
     state = 'STARTED';

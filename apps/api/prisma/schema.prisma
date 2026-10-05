@@ -1,0 +1,176 @@
+// ZERO -> ROOT — game database.
+//
+// Two principles from docs/05-architecture.md shape this schema:
+//
+//  1. **XP is a ledger.** There is no `user.xp` column. XP exists only as rows in
+//     XpTransaction and the total is derived. That is what makes cheating detectable and
+//     bugs diagnosable.
+//  2. **Missions are data.** Mission content lives in content/*.json, not here. The Mission
+//     table is a registry synced from that content at boot: it carries the non-secret
+//     metadata needed for foreign keys and for an admin to unpublish a mission. Tasks,
+//     hints and — critically — flags are never stored in it, so there is no database row
+//     that could leak a flag.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  username     String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  profile      Profile?
+  missions     UserMission[]
+  skills       UserSkill[]
+  xp           XpTransaction[]
+  labSessions  LabSession[]
+  labEvents    LabEvent[]
+  auditLogs    AuditLog[]
+
+  @@map("users")
+}
+
+model Profile {
+  userId     String  @id
+  avatar     String?
+  reputation Int     @default(0)
+  ethics     Int     @default(0)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("profiles")
+}
+
+/// Registry of playable missions, synced from content/ at boot. Never holds a flag.
+model Mission {
+  id               String   @id
+  chapter          Int
+  title            String
+  difficulty       Int
+  estimatedMinutes Int
+  xp               Int
+  image            String
+  published        Boolean  @default(true)
+  syncedAt         DateTime @updatedAt
+
+  userMissions UserMission[]
+  labSessions  LabSession[]
+
+  @@index([chapter])
+  @@map("missions")
+}
+
+/// A player's standing on one mission. Derived from the event stream by the mission engine
+/// and written here as a materialised view, never from anything the client asserts.
+model UserMission {
+  id                  String    @id @default(uuid())
+  userId              String
+  missionId           String
+  state               String    @default("AVAILABLE")
+  attempts            Int       @default(0)
+  /// Hint levels the player has paid for. Unrevealed hint text is never sent to a client.
+  revealedHintLevels  Int[]     @default([])
+  bestScore           Int       @default(0)
+  bestRating          Int       @default(0)
+  startedAt           DateTime?
+  completedAt         DateTime?
+  updatedAt           DateTime  @updatedAt
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mission Mission @relation(fields: [missionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, missionId])
+  @@index([userId, state])
+  @@map("user_missions")
+}
+
+model UserSkill {
+  userId String
+  skill  String
+  value  Int    @default(0)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, skill])
+  @@map("user_skills")
+}
+
+/// Append-only XP ledger. The total is a SUM over these rows; nothing updates a balance.
+model XpTransaction {
+  id        String   @id @default(uuid())
+  userId    String
+  amount    Int
+  reason    String
+  missionId String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@map("xp_transactions")
+}
+
+model LabSession {
+  id        String    @id @default(uuid())
+  userId    String
+  missionId String
+  /// The lab manager's id for the container. Null once the lab has been destroyed.
+  labId     String?
+  image     String
+  status    String    @default("ACTIVE")
+  createdAt DateTime  @default(now())
+  expiresAt DateTime
+  endedAt   DateTime?
+
+  user    User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mission Mission    @relation(fields: [missionId], references: [id], onDelete: Cascade)
+  events  LabEvent[]
+
+  @@index([userId, status])
+  @@map("lab_sessions")
+}
+
+/// The recorded event stream: the mission engine's only input, and the audit trail for
+/// anti-cheat. Append-only — an event is never updated or deleted.
+model LabEvent {
+  id        String   @id @default(uuid())
+  /// Null for events that are not lab-scoped: starting a mission, buying a hint and
+  /// submitting a flag all happen from the mission page, with or without a live lab.
+  sessionId String?
+  userId    String
+  missionId String
+  type      String
+  /// Type-specific fields (command, path, port, correctness...). Server-authored.
+  payload   Json
+  createdAt DateTime @default(now())
+
+  session LabSession? @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  user    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, missionId, createdAt])
+  @@index([sessionId, createdAt])
+  @@map("lab_events")
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  action    String
+  detail    String?
+  ip        String?
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([action, createdAt])
+  @@map("audit_logs")
+}

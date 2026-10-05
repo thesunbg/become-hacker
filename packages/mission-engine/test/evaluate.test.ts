@@ -25,6 +25,17 @@ describe('evaluateMission — state machine', () => {
     expect(evaluateMission(mission(), stream.events).state).toBe('COMPLETED');
   });
 
+  it('reports IN_PROGRESS for activity with no start event on record', () => {
+    // A flag submitted from the mission page, before any lab was opened.
+    const stream = new Stream('ch01-mission-001').flag(false);
+    expect(evaluateMission(mission(), stream.events).state).toBe('IN_PROGRESS');
+  });
+
+  it('reports IN_PROGRESS for a hint bought before starting', () => {
+    const stream = new Stream('ch01-mission-001').hint(1, 5);
+    expect(evaluateMission(mission(), stream.events).state).toBe('IN_PROGRESS');
+  });
+
   it('reports ABANDONED when the player walked away unfinished', () => {
     const stream = new Stream('ch01-mission-001').started().abandoned();
     expect(evaluateMission(mission(), stream.events).state).toBe('ABANDONED');
