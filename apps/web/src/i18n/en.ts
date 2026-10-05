@@ -67,6 +67,11 @@ export const en = {
   'mission.noHintLeft': 'No hints left on this mission.',
 
   'lab.session': 'Lab session',
+  'lab.running': 'You have a lab open',
+  'lab.runningOther': 'You have a lab open for another mission. Close it to start this one.',
+  'lab.resume': 'Back to your lab',
+  'lab.closeRunning': 'Close it',
+  'lab.closing': 'Closing…',
   'lab.closeLab': 'Close lab',
   'lab.submitFlag': 'Submit a flag',
   'lab.flag': 'Flag',

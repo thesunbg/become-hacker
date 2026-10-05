@@ -284,13 +284,61 @@ describe('one player cannot reach another player lab', () => {
     expect((await owner.delete(`/api/labs/${lab.body.sessionId}`)).status).toBe(204);
   });
 
-  it('allows only one live lab per player', async () => {
+  it('returns the same lab when the player walks back into the one they already have', async () => {
+    // Not a second lab: the player navigated away and came back. Refusing here is how
+    // someone ends up stranded, unable to enter any lab at all.
     const player = await register();
-    expect((await player.post('/api/labs', { missionId: 'ch01-mission-001' })).status).toBe(201);
+    const first = await player.post('/api/labs', { missionId: 'ch01-mission-001' });
+    expect(first.status).toBe(201);
 
-    const second = await player.post('/api/labs', { missionId: 'ch01-mission-001' });
-    expect(second.status).toBe(400);
-    expect(String(second.body.message)).toContain('already have a lab');
+    const again = await player.post('/api/labs', { missionId: 'ch01-mission-001' });
+    expect(again.status).toBe(201);
+    expect(again.body.sessionId).toBe(first.body.sessionId);
+  });
+
+  it('refuses a lab for a different mission, and says which one is in the way', async () => {
+    const player = await register();
+    await completeMissionOne(player);
+    const first = await player.post('/api/labs', { missionId: 'ch01-mission-002' });
+    expect(first.status).toBe(201);
+
+    const other = await player.post('/api/labs', { missionId: 'ch01-mission-001' });
+    expect(other.status).toBe(409);
+    // A bare message is a dead end; the client needs these to offer closing it.
+    expect(other.body.activeSessionId).toBe(first.body.sessionId);
+    expect(other.body.activeMissionId).toBe('ch01-mission-002');
+  });
+
+  it('reports the lab a player left open, so the UI can offer a way back', async () => {
+    const player = await register();
+    expect((await player.get('/api/labs/active')).body.lab).toBeNull();
+
+    const lab = await player.post('/api/labs', { missionId: 'ch01-mission-001' });
+    const active = await player.get('/api/labs/active');
+    expect(active.body.lab.sessionId).toBe(lab.body.sessionId);
+    expect(active.body.lab.missionId).toBe('ch01-mission-001');
+
+    await player.delete(`/api/labs/${lab.body.sessionId}`);
+    expect((await player.get('/api/labs/active')).body.lab).toBeNull();
+  });
+
+  it('does not let an expired lab lock the player out for good', async () => {
+    // The lab manager destroys the container when its time runs out but tells the API
+    // nothing, so without a sweep the row stays ACTIVE forever and the one-lab limit
+    // becomes permanent.
+    const player = await register();
+    const lab = await player.post('/api/labs', { missionId: 'ch01-mission-001' });
+
+    await harness.prisma.labSession.update({
+      where: { id: lab.body.sessionId },
+      data: { expiresAt: new Date(Date.now() - 60_000) },
+    });
+
+    expect((await player.get('/api/labs/active')).body.lab).toBeNull();
+
+    const fresh = await player.post('/api/labs', { missionId: 'ch01-mission-001' });
+    expect(fresh.status).toBe(201);
+    expect(fresh.body.sessionId).not.toBe(lab.body.sessionId);
   });
 });
 

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import type { MissionDetailResponse } from '@zero-root/types';
+import type { CreateLabResponse, MissionDetailResponse } from '@zero-root/types';
 import { api } from '../lib/api';
 import { stars } from '../lib/format';
 import { Button, ErrorNote, Panel, StateBadge } from '../components/ui';
@@ -31,6 +31,28 @@ export function MissionPage() {
     // Mission text comes from the server, so switching language refetches it.
   }, [load, locale]);
 
+  // A lab the player left open elsewhere. Without showing it, the one-lab limit turns into a
+  // dead end: entering any lab is refused and nothing on the page offers a way to close it.
+  const [activeLab, setActiveLab] = useState<CreateLabResponse | null>(null);
+  const [closing, setClosing] = useState(false);
+
+  const refreshActiveLab = useCallback(async (): Promise<void> => {
+    setActiveLab((await api.activeLab().catch(() => null)) ?? null);
+  }, []);
+
+  useEffect(() => {
+    void refreshActiveLab();
+  }, [refreshActiveLab]);
+
+  const closeActiveLab = async (): Promise<void> => {
+    if (activeLab === null) return;
+    setClosing(true);
+    await api.destroyLab(activeLab.sessionId).catch(() => undefined);
+    await refreshActiveLab();
+    setClosing(false);
+    setError('');
+  };
+
   const enterLab = async (): Promise<void> => {
     setError('');
     setBusy(true);
@@ -39,6 +61,9 @@ export function MissionPage() {
       navigate(`/lab/${lab.sessionId}`, { state: { missionId: id } });
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : t('lab.labFailed'));
+      // The refusal is almost always a lab left open somewhere else; surface it so the
+      // player can act on it rather than being told no with nothing to do about it.
+      await refreshActiveLab();
       setBusy(false);
     }
   };
@@ -161,6 +186,29 @@ export function MissionPage() {
           </Panel>
 
           {completed && <KnowledgeReview mission={mission} />}
+
+          {activeLab !== null && (
+            <div className="rounded-md border border-warn/40 bg-warn/10 p-4">
+              <p className="font-mono text-sm text-warn">
+                {activeLab.missionId === mission.id ? t('lab.running') : t('lab.runningOther')}
+              </p>
+              <div className="mt-3 flex flex-wrap gap-3">
+                <Button
+                  variant="ghost"
+                  onClick={() =>
+                    navigate(`/lab/${activeLab.sessionId}`, {
+                      state: { missionId: activeLab.missionId },
+                    })
+                  }
+                >
+                  {t('lab.resume')}
+                </Button>
+                <Button variant="danger" onClick={() => void closeActiveLab()} disabled={closing}>
+                  {closing ? t('lab.closing') : t('lab.closeRunning')}
+                </Button>
+              </div>
+            </div>
+          )}
 
           <ErrorNote>{error}</ErrorNote>
 

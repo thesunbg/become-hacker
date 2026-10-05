@@ -63,6 +63,12 @@ export const vi: Messages = {
   'mission.noHintLeft': 'Nhiệm vụ này đã hết gợi ý.',
 
   'lab.session': 'Phiên lab',
+  'lab.running': 'Bạn đang mở một phòng lab',
+  'lab.runningOther':
+    'Bạn đang mở một phòng lab của nhiệm vụ khác. Hãy đóng nó để bắt đầu nhiệm vụ này.',
+  'lab.resume': 'Quay lại phòng lab',
+  'lab.closeRunning': 'Đóng phòng lab đó',
+  'lab.closing': 'Đang đóng…',
   'lab.closeLab': 'Đóng lab',
   'lab.submitFlag': 'Nộp flag',
   'lab.flag': 'Flag',

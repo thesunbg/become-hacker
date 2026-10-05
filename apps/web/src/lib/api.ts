@@ -1,5 +1,6 @@
 import { currentLocale } from '../i18n';
 import type {
+  ActiveLabResponse,
   CreateLabResponse,
   HintResponse,
   MeResponse,
@@ -21,6 +22,8 @@ export class ApiError extends Error {
   constructor(
     readonly status: number,
     message: string,
+    /** The parsed response body, so a caller can act on more than the message. */
+    readonly body?: unknown,
   ) {
     super(message);
     this.name = 'ApiError';
@@ -49,6 +52,7 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
     throw new ApiError(
       response.status,
       messageFrom(payload) ?? `Request failed (${response.status}).`,
+      payload,
     );
   }
   return payload as T;
@@ -95,6 +99,9 @@ export const api = {
     request<SubmitFlagResponse>('POST', `/api/missions/${id}/flag`, { value }),
 
   createLab: (missionId: string) => request<CreateLabResponse>('POST', '/api/labs', { missionId }),
+
+  activeLab: async (): Promise<CreateLabResponse | null> =>
+    (await request<ActiveLabResponse>('GET', '/api/labs/active')).lab ?? null,
 
   destroyLab: (sessionId: string) => request<void>('DELETE', `/api/labs/${sessionId}`),
 };

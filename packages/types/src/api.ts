@@ -66,6 +66,11 @@ export interface CreateLabResponse {
   readonly terminalPath: string;
 }
 
+/** The lab a player currently has open, or null when there is none. */
+export interface ActiveLabResponse {
+  readonly lab: CreateLabResponse | null;
+}
+
 export interface SubmitFlagRequest {
   readonly value: string;
 }
