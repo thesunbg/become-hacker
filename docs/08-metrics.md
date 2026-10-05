@@ -28,14 +28,14 @@ Recommended:
 
 ## Product metrics
 
-| Metric | Definition |
-| --- | --- |
-| **Activation** | % of users completing Mission 01 |
-| **Engagement** | Missions / user / week |
-| **Learning** | Average chapter completion |
-| **Difficulty** | Mission failure rate |
-| **Retention** | D1 / D7 / D30 |
-| **Skill improvement** | Pre/post assessment |
+| Metric                | Definition                       |
+| --------------------- | -------------------------------- |
+| **Activation**        | % of users completing Mission 01 |
+| **Engagement**        | Missions / user / week           |
+| **Learning**          | Average chapter completion       |
+| **Difficulty**        | Mission failure rate             |
+| **Retention**         | D1 / D7 / D30                    |
+| **Skill improvement** | Pre/post assessment              |
 
 Activation is the one to watch first — it is the direct measurement of whether the first ten
 minutes work.

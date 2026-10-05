@@ -73,7 +73,8 @@ class SimulatedShell {
         case 'cd': {
           const target = args[0] ?? '~';
           const next = resolve(this.cwd, target);
-          if (this.host(next) === null) outputs.push(`bash: cd: ${target}: No such file or directory`);
+          if (this.host(next) === null)
+            outputs.push(`bash: cd: ${target}: No such file or directory`);
           else this.cwd = next;
           break;
         }
@@ -228,7 +229,9 @@ export async function startFakeLabManager(token: string): Promise<FakeLabManager
             line = '';
             if (command !== '') {
               const output = shell.run(command);
-              if (output !== '') ws.send(`${output}\r\n`);
+              // A real lab runs with a TTY, whose line discipline turns \n into \r\n.
+              // Without matching that here, output staircases down the screen.
+              if (output !== '') ws.send(`${output.replace(/\r?\n/g, '\r\n')}\r\n`);
             }
             ws.send(PROMPT);
             continue;

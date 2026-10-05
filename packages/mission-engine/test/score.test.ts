@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { evaluateMission } from '../src/evaluate.js';
-import { SCORING, ratingFromScore, resultForMission, scoreMission, xpForMission } from '../src/score.js';
+import {
+  SCORING,
+  ratingFromScore,
+  resultForMission,
+  scoreMission,
+  xpForMission,
+} from '../src/score.js';
 import { Stream, mission } from './helpers.js';
 
 const perfect = () => new Stream('ch01-mission-001').started().run('whoami', 'player');
@@ -39,14 +45,23 @@ describe('scoreMission', () => {
   it('scores lower when hints were used', () => {
     const m = mission();
     const clean = scoreMission(m, evaluateMission(m, perfect().events));
-    const hinted = new Stream('ch01-mission-001').started().hint(1, 5).hint(2, 10).hint(3, 20).run('whoami', 'player');
+    const hinted = new Stream('ch01-mission-001')
+      .started()
+      .hint(1, 5)
+      .hint(2, 10)
+      .hint(3, 20)
+      .run('whoami', 'player');
     expect(scoreMission(m, evaluateMission(m, hinted.events))).toBeLessThan(clean);
   });
 
   it('scores lower after wrong answers', () => {
     const m = mission();
     const clean = scoreMission(m, evaluateMission(m, perfect().events));
-    const sloppy = new Stream('ch01-mission-001').started().flag(false).flag(false).run('whoami', 'player');
+    const sloppy = new Stream('ch01-mission-001')
+      .started()
+      .flag(false)
+      .flag(false)
+      .run('whoami', 'player');
     expect(scoreMission(m, evaluateMission(m, sloppy.events))).toBeLessThan(clean);
   });
 
@@ -87,7 +102,10 @@ describe('scoreMission', () => {
       ],
     });
     const without = scoreMission(m, evaluateMission(m, perfect().events));
-    const with_ = new Stream('ch01-mission-001').started().run('whoami', 'player').run('find /', 'x');
+    const with_ = new Stream('ch01-mission-001')
+      .started()
+      .run('whoami', 'player')
+      .run('find /', 'x');
     expect(scoreMission(m, evaluateMission(m, with_.events))).toBeGreaterThan(without);
   });
 });
@@ -106,7 +124,11 @@ describe('xpForMission', () => {
 
   it('charges the published cost of each hint used', () => {
     const m = mission();
-    const stream = new Stream('ch01-mission-001').started().hint(1, 5).hint(2, 10).run('whoami', 'player');
+    const stream = new Stream('ch01-mission-001')
+      .started()
+      .hint(1, 5)
+      .hint(2, 10)
+      .run('whoami', 'player');
     const breakdown = xpForMission(m, evaluateMission(m, stream.events));
     expect(breakdown.hintPenalty).toBe(15);
   });
@@ -139,7 +161,11 @@ describe('xpForMission', () => {
 
   it('withholds the first-attempt bonus on a retry', () => {
     const m = mission();
-    const stream = new Stream('ch01-mission-001').started().abandoned().started().run('whoami', 'player');
+    const stream = new Stream('ch01-mission-001')
+      .started()
+      .abandoned()
+      .started()
+      .run('whoami', 'player');
     const breakdown = xpForMission(m, evaluateMission(m, stream.events));
     expect(breakdown.bonusXp).toBe(25); // no-hint 15 + efficient 10
   });
@@ -168,7 +194,11 @@ describe('resultForMission', () => {
 
   it('reports the hint and mistake counts the player is shown', () => {
     const m = mission();
-    const stream = new Stream('ch01-mission-001').started().hint(1, 5).flag(false).run('whoami', 'player');
+    const stream = new Stream('ch01-mission-001')
+      .started()
+      .hint(1, 5)
+      .flag(false)
+      .run('whoami', 'player');
     const result = resultForMission(m, evaluateMission(m, stream.events));
     expect(result.hintsUsed).toBe(1);
     expect(result.mistakes).toBe(1);

@@ -209,11 +209,7 @@ describe('mission 002 — Find the Secret', () => {
   });
 
   it('is solvable by navigating into the directory instead', () => {
-    const lab = new FakeLab(m.id)
-      .start()
-      .run('ls -al')
-      .run('cd .null')
-      .run('cat first_contact');
+    const lab = new FakeLab(m.id).start().run('ls -al').run('cd .null').run('cat first_contact');
     lab.submitFlag(m.flag!, m.flag);
     expect(evaluateMission(m, lab.events).state).toBe('COMPLETED');
   });
@@ -243,8 +239,8 @@ describe('mission 002 — Find the Secret', () => {
     const withoutFind = new FakeLab(m.id).start().run('ls -la').run('cat .null/first_contact');
     withoutFind.submitFlag(m.flag!, m.flag);
     const bonusOf = (events: GameEvent[]): boolean =>
-      evaluateMission(m, events).tasks.find((task) => task.taskId === 'search-by-name')?.completed ??
-      false;
+      evaluateMission(m, events).tasks.find((task) => task.taskId === 'search-by-name')
+        ?.completed ?? false;
     expect(bonusOf(withoutFind.events)).toBe(false);
 
     const withFind = new FakeLab(m.id)

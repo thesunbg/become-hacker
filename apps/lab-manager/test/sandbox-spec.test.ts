@@ -87,7 +87,10 @@ describe('buildSandboxSpec — network isolation', () => {
 
 describe('buildSandboxSpec — resource limits', () => {
   it('bounds processes, memory and CPU', () => {
-    const spec = build({}, { LAB_CPU_LIMIT: '0.5', LAB_MEMORY_LIMIT: '256m', LAB_PIDS_LIMIT: '64' });
+    const spec = build(
+      {},
+      { LAB_CPU_LIMIT: '0.5', LAB_MEMORY_LIMIT: '256m', LAB_PIDS_LIMIT: '64' },
+    );
     expect(spec.HostConfig.PidsLimit).toBe(64);
     expect(spec.HostConfig.Memory).toBe(256 * 1024 * 1024);
     expect(spec.HostConfig.NanoCpus).toBe(500_000_000);
@@ -108,7 +111,10 @@ describe('buildSandboxSpec — resource limits', () => {
   });
 
   it('stays bounded even when configuration asks for a huge lab', () => {
-    const spec = build({}, { LAB_CPU_LIMIT: '99', LAB_MEMORY_LIMIT: '99g', LAB_PIDS_LIMIT: '99999' });
+    const spec = build(
+      {},
+      { LAB_CPU_LIMIT: '99', LAB_MEMORY_LIMIT: '99g', LAB_PIDS_LIMIT: '99999' },
+    );
     expect(spec.HostConfig.NanoCpus).toBe(LIMIT_BOUNDS.cpus.max * 1_000_000_000);
     expect(spec.HostConfig.Memory).toBe(LIMIT_BOUNDS.memoryBytes.max);
     expect(spec.HostConfig.PidsLimit).toBe(LIMIT_BOUNDS.pids.max);
@@ -181,15 +187,33 @@ describe('assertSpecIsSafe', () => {
 
   const violations: [string, (spec: typeof safe) => unknown][] = [
     ['privileged mode', (s) => ({ ...s, HostConfig: { ...s.HostConfig, Privileged: true } })],
-    ['capabilities are not dropped', (s) => ({ ...s, HostConfig: { ...s.HostConfig, CapDrop: [] } })],
-    ['capabilities are being added back', (s) => ({ ...s, HostConfig: { ...s.HostConfig, CapAdd: ['SYS_ADMIN'] } })],
-    ['root filesystem is writable', (s) => ({ ...s, HostConfig: { ...s.HostConfig, ReadonlyRootfs: false } })],
+    [
+      'capabilities are not dropped',
+      (s) => ({ ...s, HostConfig: { ...s.HostConfig, CapDrop: [] } }),
+    ],
+    [
+      'capabilities are being added back',
+      (s) => ({ ...s, HostConfig: { ...s.HostConfig, CapAdd: ['SYS_ADMIN'] } }),
+    ],
+    [
+      'root filesystem is writable',
+      (s) => ({ ...s, HostConfig: { ...s.HostConfig, ReadonlyRootfs: false } }),
+    ],
     ['no-new-privileges', (s) => ({ ...s, HostConfig: { ...s.HostConfig, SecurityOpt: [] } })],
-    ['a host path is bind-mounted', (s) => ({ ...s, HostConfig: { ...s.HostConfig, Binds: ['/:/host'] } })],
+    [
+      'a host path is bind-mounted',
+      (s) => ({ ...s, HostConfig: { ...s.HostConfig, Binds: ['/:/host'] } }),
+    ],
     ['a host path is mounted', (s) => ({ ...s, HostConfig: { ...s.HostConfig, Mounts: [{}] } })],
     ['a host device is exposed', (s) => ({ ...s, HostConfig: { ...s.HostConfig, Devices: [{}] } })],
-    ['can reach beyond the lab', (s) => ({ ...s, HostConfig: { ...s.HostConfig, NetworkMode: 'host' } })],
-    ['process count is unbounded', (s) => ({ ...s, HostConfig: { ...s.HostConfig, PidsLimit: 0 } })],
+    [
+      'can reach beyond the lab',
+      (s) => ({ ...s, HostConfig: { ...s.HostConfig, NetworkMode: 'host' } }),
+    ],
+    [
+      'process count is unbounded',
+      (s) => ({ ...s, HostConfig: { ...s.HostConfig, PidsLimit: 0 } }),
+    ],
     ['memory is unbounded', (s) => ({ ...s, HostConfig: { ...s.HostConfig, Memory: 0 } })],
     ['swap is not disabled', (s) => ({ ...s, HostConfig: { ...s.HostConfig, MemorySwap: -1 } })],
     ['CPU is unbounded', (s) => ({ ...s, HostConfig: { ...s.HostConfig, NanoCpus: 0 } })],

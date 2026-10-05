@@ -50,10 +50,7 @@ export interface LabManager {
  * browser. The player's terminal reaches it only by being proxied through the API's gateway
  * (docs/05-architecture.md).
  */
-export function createLabManager(
-  config: LabManagerConfig,
-  driver: SandboxDriver,
-): LabManager {
+export function createLabManager(config: LabManagerConfig, driver: SandboxDriver): LabManager {
   const registry = new LabRegistry(driver);
 
   const authorized = (req: IncomingMessage): boolean => {

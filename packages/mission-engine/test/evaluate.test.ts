@@ -65,15 +65,26 @@ describe('evaluateMission — objective types', () => {
 
   it('satisfies FILE_FOUND from a successful read', () => {
     const m = mission({
-      tasks: [{ id: 'f', type: 'FILE_FOUND', description: 'read it', target: '/home/player/.null/first_contact' }],
+      tasks: [
+        {
+          id: 'f',
+          type: 'FILE_FOUND',
+          description: 'read it',
+          target: '/home/player/.null/first_contact',
+        },
+      ],
     });
-    const stream = new Stream('ch01-mission-001').started().run('cat .null/first_contact', 'ZR{...}');
+    const stream = new Stream('ch01-mission-001')
+      .started()
+      .run('cat .null/first_contact', 'ZR{...}');
     expect(taskDone(evaluateMission(m, stream.events), 'f')).toBe(true);
   });
 
   it('does not satisfy FILE_FOUND when the read failed', () => {
     const m = mission({
-      tasks: [{ id: 'f', type: 'FILE_FOUND', description: 'read it', target: '/home/player/.secret' }],
+      tasks: [
+        { id: 'f', type: 'FILE_FOUND', description: 'read it', target: '/home/player/.secret' },
+      ],
     });
     const stream = new Stream('ch01-mission-001')
       .started()
@@ -130,7 +141,14 @@ describe('evaluateMission — optional tasks', () => {
   const m = mission({
     tasks: [
       { id: 'req', type: 'COMMAND', description: 'required', target: 'whoami', xp: 10 },
-      { id: 'bonus', type: 'COMMAND', description: 'bonus', target: 'find', optional: true, xp: 25 },
+      {
+        id: 'bonus',
+        type: 'COMMAND',
+        description: 'bonus',
+        target: 'find',
+        optional: true,
+        xp: 25,
+      },
     ],
   });
 

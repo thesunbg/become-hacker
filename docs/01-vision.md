@@ -1,6 +1,6 @@
 # 01 — Product Vision
 
-**ZERO → ROOT** — *Learn. Hack. Think. Defend.*
+**ZERO → ROOT** — _Learn. Hack. Think. Defend._
 
 A web RPG where the player starts from nothing and becomes a cybersecurity professional. It
 combines cybersecurity education, logic puzzles, an interactive terminal, story-driven missions,
@@ -39,11 +39,11 @@ AI-generated missions · complex cloud infrastructure · real malware execution
 
 ## Target users
 
-| Tier | Starting point | Goal |
-| --- | --- | --- |
-| **Beginner** | No Linux, network, web or security knowledge | Zero → understands how computers and the Internet work |
-| **Intermediate** | Basic IT knowledge | Learn pentesting/cybersecurity through practice |
-| **Advanced** | Already knows security | Hard challenges, attack chains, red team, blue team |
+| Tier             | Starting point                               | Goal                                                   |
+| ---------------- | -------------------------------------------- | ------------------------------------------------------ |
+| **Beginner**     | No Linux, network, web or security knowledge | Zero → understands how computers and the Internet work |
+| **Intermediate** | Basic IT knowledge                           | Learn pentesting/cybersecurity through practice        |
+| **Advanced**     | Already knows security                       | Hard challenges, attack chains, red team, blue team    |
 
 ## Character arc
 
@@ -80,8 +80,8 @@ That is the real progression: **Zero → Hacker → Security Professional → Ro
 The MVP works if someone with no cybersecurity background can:
 
 1. Register · 2. Understand the story · 3. Enter a safe virtual computer · 4. Use a real terminal ·
-5. **Discover something without being told the answer** · 6. Solve mission 01 ·
-7. Understand what they learned · 8. Want to play mission 02.
+2. **Discover something without being told the answer** · 6. Solve mission 01 ·
+3. Understand what they learned · 8. Want to play mission 02.
 
 If all eight hold, keep building.
 
@@ -98,4 +98,4 @@ The first session is the whole product bet:
 04:00 pwd                 10:00 "You just learned Linux filesystem fundamentals."
 ```
 
-The player should finish thinking: *"I want to know what happens next."*
+The player should finish thinking: _"I want to know what happens next."_

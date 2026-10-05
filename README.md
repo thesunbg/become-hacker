@@ -17,9 +17,15 @@ The player is never handed the answer.
 
 ## Status
 
-**Pre-MVP.** The repository currently holds the specification, the monorepo scaffolding, the
-mission content format with the first two missions authored as data, and the `linux-basic` lab
-image. Application code for [Vertical Slice #1](docs/07-roadmap.md) is the next step.
+**Vertical Slice #1 is playable.** Register, sign in, open mission 01, get an isolated lab, use
+a real terminal, discover the hidden file, submit the flag, and earn XP — with mission 02, the
+hint system and the knowledge review working end to end.
+
+354 tests, including integration tests that drive the whole flow against real Postgres and
+Redis, and security tests that assert the sandbox's posture without needing a Docker daemon.
+
+Next: the rest of Chapter 1 (missions 003–010), then Chapters 2 and 3. See
+[`docs/07-roadmap.md`](docs/07-roadmap.md).
 
 ## Documentation
 
@@ -33,21 +39,36 @@ Start at [`docs/README.md`](docs/README.md). The two documents that constrain ev
 Requires Node.js 22+, pnpm, Docker and Docker Compose.
 
 ```bash
-cp .env.example .env.local        # then fill in SESSION_SECRET
+cp .env.example .env.local                  # then fill in SESSION_SECRET
 pnpm install
-pnpm infra:up                     # postgres + redis
-pnpm content:validate             # check mission JSON (no install needed)
-pnpm dev
+pnpm infra:up                               # postgres + redis
+pnpm --filter @zero-root/api db:migrate     # create the schema
+pnpm dev                                    # api on :3001, web on :5173
+```
+
+Then open http://localhost:5173 and create an account.
+
+`apps/lab-manager` needs a Docker daemon to start labs. Without one it refuses rather than
+running player commands anywhere else, so the terminal will report the lab service as
+unavailable — see [Safety](#safety).
+
+```bash
+pnpm test              # 354 tests; the API's need Postgres and Redis
+pnpm typecheck
+pnpm content:validate  # mission JSON; the one check that needs no install
 ```
 
 ## Layout
 
 ```
-apps/web            React player client
-apps/api            NestJS game API
-apps/admin          Admin panel
+apps/web            React · Vite · Tailwind · xterm.js
+apps/api            NestJS · Prisma · PostgreSQL · Redis
 apps/lab-manager    Creates/destroys sandboxes — the only thing that talks to the runtime
-packages/           shared · mission-engine · ui · types
+apps/admin          Admin panel (not built yet)
+packages/types      Shared contracts; flags-to-the-client is a compile error
+packages/mission-engine  Pure objective and scoring engine
+packages/shared     Progression curve, shared so client and server agree
+packages/ui         Shared components (not built yet)
 content/            Mission JSON + schema (missions are data, never code)
 labs/               Sandbox image definitions
 infrastructure/     docker · terraform
@@ -75,5 +96,5 @@ with no route to the internet, to the host, or to production.
 
 ## The rule that outranks the rest
 
-> Do not optimize for *how much cybersecurity content can we put into the game*.
-> Optimize for *how deeply can the player understand one concept by interacting with it*.
+> Do not optimize for _how much cybersecurity content can we put into the game_.
+> Optimize for _how deeply can the player understand one concept by interacting with it_.

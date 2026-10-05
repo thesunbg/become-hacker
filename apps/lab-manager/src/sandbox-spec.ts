@@ -48,7 +48,11 @@ export interface SandboxSpec {
     readonly MemorySwap: number;
     readonly MemorySwappiness: 0;
     readonly NanoCpus: number;
-    readonly Ulimits: readonly { readonly Name: string; readonly Soft: number; readonly Hard: number }[];
+    readonly Ulimits: readonly {
+      readonly Name: string;
+      readonly Soft: number;
+      readonly Hard: number;
+    }[];
     readonly RestartPolicy: { readonly Name: 'no' };
     readonly IpcMode: 'private';
     readonly UsernsMode: '';
@@ -161,11 +165,16 @@ export function assertSpecIsSafe(spec: SandboxSpec): void {
   if (!host.CapDrop.includes('ALL')) problems.push('capabilities are not dropped');
   if (host.CapAdd.length > 0) problems.push('capabilities are being added back');
   if (host.ReadonlyRootfs !== true) problems.push('root filesystem is writable');
-  if (!host.SecurityOpt.includes('no-new-privileges')) problems.push('no-new-privileges is not set');
+  if (!host.SecurityOpt.includes('no-new-privileges'))
+    problems.push('no-new-privileges is not set');
   if (host.Binds.length > 0) problems.push('a host path is bind-mounted');
   if (host.Mounts.length > 0) problems.push('a host path is mounted');
   if (host.Devices.length > 0) problems.push('a host device is exposed');
-  if (host.NetworkMode === 'host' || host.NetworkMode === 'bridge' || host.NetworkMode === 'default') {
+  if (
+    host.NetworkMode === 'host' ||
+    host.NetworkMode === 'bridge' ||
+    host.NetworkMode === 'default'
+  ) {
     problems.push(`network mode "${host.NetworkMode}" can reach beyond the lab`);
   }
   if (!(host.PidsLimit > 0)) problems.push('process count is unbounded');

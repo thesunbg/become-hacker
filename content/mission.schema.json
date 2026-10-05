@@ -56,17 +56,10 @@
     "environment": {
       "type": "object",
       "additionalProperties": false,
-      "required": [
-        "type",
-        "image"
-      ],
+      "required": ["type", "image"],
       "properties": {
         "type": {
-          "enum": [
-            "terminal",
-            "terminal+browser",
-            "browser"
-          ]
+          "enum": ["terminal", "terminal+browser", "browser"]
         },
         "image": {
           "type": "string",
@@ -80,11 +73,7 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": [
-          "id",
-          "type",
-          "description"
-        ],
+        "required": ["id", "type", "description"],
         "properties": {
           "id": {
             "type": "string",
@@ -133,11 +122,7 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": [
-          "level",
-          "text",
-          "xpCost"
-        ],
+        "required": ["level", "text", "xpCost"],
         "properties": {
           "level": {
             "type": "integer",
@@ -167,10 +152,7 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": [
-          "concept",
-          "explanation"
-        ],
+        "required": ["concept", "explanation"],
         "properties": {
           "concept": {
             "type": "string",
@@ -193,10 +175,7 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": [
-          "skill",
-          "amount"
-        ],
+        "required": ["skill", "amount"],
         "properties": {
           "skill": {
             "enum": [

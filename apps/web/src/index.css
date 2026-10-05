@@ -1,0 +1,46 @@
+@import 'tailwindcss';
+@import '@xterm/xterm/css/xterm.css';
+
+/*
+ * Dark, minimal, professional (docs/05-architecture.md). Black and dark grey carry the
+ * layout; green, blue, amber and red are reserved for meaning — a completed objective, a
+ * live lab, a warning, a failure — so colour always says something.
+ */
+@theme {
+  --color-void: #07090b;
+  --color-surface: #0e1116;
+  --color-raised: #151a21;
+  --color-border: #222a34;
+  --color-muted: #7d8795;
+  --color-text: #dfe5ec;
+  --color-signal: #35d07f;
+  --color-info: #4ea6ff;
+  --color-warn: #f0b429;
+  --color-danger: #f2555a;
+
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', monospace;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  background-color: var(--color-void);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* A focus ring that is visible on a near-black background. */
+:focus-visible {
+  outline: 2px solid var(--color-info);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: color-mix(in oklab, var(--color-signal) 30%, transparent);
+}

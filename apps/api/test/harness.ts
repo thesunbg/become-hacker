@@ -1,11 +1,13 @@
 import type { Server } from 'node:http';
 import { ValidationPipe } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
+import { PrismaClient } from '@prisma/client';
 import { WebSocket } from 'ws';
 import { AppModule } from '../src/app.module';
 import { PrismaService } from '../src/prisma/prisma.service';
 import { TerminalGateway } from '../src/terminal/terminal.gateway';
 import { startFakeLabManager, type FakeLabManager } from './fake-lab-manager';
+import { TEST_DATABASE_URL } from './global-setup';
 
 export const WEB_ORIGIN = 'http://localhost:5173';
 const LAB_TOKEN = 'test-lab-token';
@@ -28,6 +30,19 @@ export async function startHarness(): Promise<Harness> {
     LAB_MANAGER_TOKEN: LAB_TOKEN,
   });
 
+  // Truncated before the app starts, so the mission registry sync that happens during
+  // startup is the real one. Clearing the database afterwards and re-syncing by hand would
+  // hide exactly the kind of start-up ordering bug this is here to catch.
+  const scrubber = new PrismaClient({
+    datasources: { db: { url: process.env.DATABASE_URL ?? TEST_DATABASE_URL } },
+  });
+  await scrubber.$executeRawUnsafe(`
+    TRUNCATE TABLE lab_events, lab_sessions, xp_transactions, user_skills,
+                   user_missions, audit_logs, profiles, users, missions
+    RESTART IDENTITY CASCADE
+  `);
+  await scrubber.$disconnect();
+
   const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
 
   const app = moduleRef.createNestApplication();
@@ -45,13 +60,6 @@ export async function startHarness(): Promise<Harness> {
   const port = typeof address === 'object' && address !== null ? address.port : 0;
 
   const prisma = app.get(PrismaService);
-  await prisma.truncateAll();
-  await app.get(PrismaService).$executeRawUnsafe('SELECT 1');
-  // The registry syncs on boot; truncating wiped it, so put the missions back.
-  await moduleRef.get(
-    (await import('../src/missions/mission-registry.service')).MissionRegistryService,
-  ).sync();
-
   const redis = app.get((await import('../src/redis/redis.service')).RedisService);
   await redis.client.flushdb();
 
@@ -135,7 +143,11 @@ export class TerminalClient {
     });
   }
 
-  static async connect(baseUrl: string, sessionId: string, cookie: string): Promise<TerminalClient> {
+  static async connect(
+    baseUrl: string,
+    sessionId: string,
+    cookie: string,
+  ): Promise<TerminalClient> {
     const url = `${baseUrl.replace(/^http/, 'ws')}/ws/terminal?sessionId=${sessionId}`;
     const socket = new WebSocket(url, { headers: { cookie } });
     const client = new TerminalClient(socket);

@@ -1,4 +1,4 @@
-# Lab: web-basic — *not yet built*
+# Lab: web-basic — _not yet built_
 
 Chapter 3's sandbox. Planned contents (see [`docs/07-roadmap.md`](../../docs/07-roadmap.md),
 Sprint 6):

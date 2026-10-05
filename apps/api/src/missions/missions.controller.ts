@@ -81,9 +81,10 @@ export class MissionsController {
 
     const chapters = this.content.chapters().map((chapter) => ({
       ...chapter,
-      completedCount: this.content.all().filter(
-        (mission) => mission.chapter === chapter.chapter && completed.has(mission.id),
-      ).length,
+      completedCount: this.content
+        .all()
+        .filter((mission) => mission.chapter === chapter.chapter && completed.has(mission.id))
+        .length,
     }));
 
     return { chapters, missions };

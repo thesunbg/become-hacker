@@ -129,7 +129,8 @@ export class TerminalRecorder {
       case 'after-esc':
         if (char === '[') this.escape = 'csi';
         else if (char === ']') this.escape = 'osc';
-        else if (char === 'O') this.escape = 'csi'; // SS3: application-mode arrow keys
+        else if (char === 'O')
+          this.escape = 'csi'; // SS3: application-mode arrow keys
         else this.escape = 'none'; // a two-byte escape, already complete
         break;
 

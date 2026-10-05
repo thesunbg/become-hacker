@@ -26,11 +26,11 @@ See [`docs/06-security.md`](../docs/06-security.md) — that document outranks c
 
 ## Images
 
-| Image | Chapter | Contains |
-| --- | --- | --- |
-| `linux-basic` | 1 | A single Linux box: filesystem, users, permissions, processes, logs |
-| `network-basic` | 2 | Linux client + server, DNS, HTTP, several listening ports |
-| `web-basic` | 3 | Deliberately vulnerable web apps on game-owned fake domains |
+| Image           | Chapter | Contains                                                            |
+| --------------- | ------- | ------------------------------------------------------------------- |
+| `linux-basic`   | 1       | A single Linux box: filesystem, users, permissions, processes, logs |
+| `network-basic` | 2       | Linux client + server, DNS, HTTP, several listening ports           |
+| `web-basic`     | 3       | Deliberately vulnerable web apps on game-owned fake domains         |
 
 ## The flag rule
 

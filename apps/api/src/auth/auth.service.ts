@@ -27,7 +27,12 @@ export class AuthService {
     @Inject(APP_CONFIG) private readonly config: AppConfig,
   ) {}
 
-  private async audit(action: string, userId: string | null, detail: string, ip?: string): Promise<void> {
+  private async audit(
+    action: string,
+    userId: string | null,
+    detail: string,
+    ip?: string,
+  ): Promise<void> {
     await this.prisma.auditLog.create({
       data: { action, userId, detail, ip: ip ?? null },
     });

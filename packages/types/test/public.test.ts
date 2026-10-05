@@ -17,7 +17,13 @@ const full: MissionDefinition = {
   objective: 'objective',
   environment: { type: 'terminal', image: 'linux-basic' },
   tasks: [
-    { id: 'find-hidden', type: 'FILE_FOUND', description: 'read it', target: '/home/player/.null/first_contact', xp: 50 },
+    {
+      id: 'find-hidden',
+      type: 'FILE_FOUND',
+      description: 'read it',
+      target: '/home/player/.null/first_contact',
+      xp: 50,
+    },
     { id: 'bonus', type: 'COMMAND', description: 'bonus', target: 'find', optional: true, xp: 25 },
   ],
   hints: [

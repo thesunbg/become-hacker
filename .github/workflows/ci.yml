@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: ["**"]
+    branches: ['**']
   pull_request:
 
 concurrency:
@@ -22,8 +22,40 @@ jobs:
       - run: node scripts/validate-content.mjs
 
   verify:
-    name: Lint, typecheck, test
+    name: Lint, typecheck, test, build
     runs-on: ubuntu-latest
+
+    # The API's tests run against real Postgres and real Redis. The things they prove — that
+    # XP is a ledger, that progress is recomputed rather than trusted — are exactly what a
+    # mocked database would let us get wrong.
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: zeroroot
+          POSTGRES_PASSWORD: zeroroot
+          POSTGRES_DB: zeroroot_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U zeroroot"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      TEST_DATABASE_URL: postgresql://zeroroot:zeroroot@127.0.0.1:5432/zeroroot_test
+      TEST_REDIS_URL: redis://127.0.0.1:6379/15
+
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -32,7 +64,7 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm lint
+      - run: pnpm format:check
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm build

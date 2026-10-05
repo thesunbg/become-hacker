@@ -17,7 +17,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.cjs.json && tsc -p tsconfig.esm.json",
+    "build": "tsc -p tsconfig.cjs.json && node ../../scripts/mark-module-type.mjs dist/cjs commonjs && tsc -p tsconfig.esm.json && node ../../scripts/mark-module-type.mjs dist/esm module",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",

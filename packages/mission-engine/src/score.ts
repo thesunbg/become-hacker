@@ -88,7 +88,10 @@ export function scoreMission(mission: MissionDefinition, progress: MissionProgre
   // With nothing optional to find, that weight belongs to the work the player actually did.
   const completionWeight = hasOptional ? weights.completion : weights.completion + weights.optional;
 
-  const hintBudget = Math.max(1, mission.hints.reduce((sum, hint) => sum + hint.xpCost, 0));
+  const hintBudget = Math.max(
+    1,
+    mission.hints.reduce((sum, hint) => sum + hint.xpCost, 0),
+  );
   const hintSpend = progress.hintsUsed.reduce((sum, level) => {
     const hint = mission.hints.find((candidate) => candidate.level === level);
     return sum + (hint?.xpCost ?? 0);

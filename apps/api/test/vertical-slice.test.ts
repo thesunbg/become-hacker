@@ -252,6 +252,34 @@ describe('hints', () => {
     expect(none.status).toBe(400);
   });
 
+  it('still records a start after a hint, so the mission is timed', async () => {
+    // Buying a hint first used to leave the mission with no start event on record, which
+    // made its elapsed time zero and quietly cost the player the efficiency bonus.
+    const hinted = await register();
+    await hinted.post('/api/missions/ch01-mission-001/hint');
+
+    const lab = await hinted.post('/api/labs', { missionId: 'ch01-mission-001' });
+    expect(lab.status).toBe(201);
+
+    const progress = await hinted.get('/api/missions/ch01-mission-001');
+    expect(progress.body.progress.attempts).toBe(1);
+
+    const terminal = await TerminalClient.connect(
+      harness.baseUrl,
+      lab.body.sessionId,
+      hinted.cookie,
+    );
+    await terminal.type('whoami');
+    await terminal.type('pwd');
+    await terminal.type('cat README.txt');
+    await terminal.type('ls');
+    await terminal.close();
+
+    const done = await hinted.get('/api/missions/ch01-mission-001');
+    expect(done.body.progress.state).toBe('COMPLETED');
+    expect(done.body.progress.elapsedSeconds).toBeGreaterThan(0);
+  }, 60_000);
+
   it('returns the revealed hints with the mission, and only those', async () => {
     const detail = await player.get('/api/missions/ch01-mission-001');
     expect(detail.body.revealedHints.map((h: any) => h.level)).toEqual([1, 2, 3]);

@@ -15,9 +15,12 @@
     "typecheck": "turbo run typecheck",
     "content:validate": "node scripts/validate-content.mjs",
     "infra:up": "docker compose -f infrastructure/docker/docker-compose.yml up -d",
-    "infra:down": "docker compose -f infrastructure/docker/docker-compose.yml down"
+    "infra:down": "docker compose -f infrastructure/docker/docker-compose.yml down",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "devDependencies": {
+    "prettier": "^3.4.2",
     "turbo": "^2.3.3",
     "typescript": "^5.7.2"
   },

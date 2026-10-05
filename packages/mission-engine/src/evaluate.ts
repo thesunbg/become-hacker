@@ -241,7 +241,8 @@ export function evaluateMission(
 
   const now = options.now;
   const end = terminal !== undefined || allRequiredDone ? last : (now ?? last);
-  const elapsedSeconds = started !== undefined && end !== undefined ? secondsBetween(started, end) : 0;
+  const elapsedSeconds =
+    started !== undefined && end !== undefined ? secondsBetween(started, end) : 0;
 
   let state: MissionState;
   if (allRequiredDone) {

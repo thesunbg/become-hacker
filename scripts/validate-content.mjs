@@ -167,14 +167,18 @@ for (const file of files) {
     errors.push('has a FLAG_FOUND task but defines no flag');
   }
   if (mission.flag && !huntsFlag) {
-    errors.push('defines a flag no task asks the player to find — add a FLAG_FOUND task or drop the flag');
+    errors.push(
+      'defines a flag no task asks the player to find — add a FLAG_FOUND task or drop the flag',
+    );
   }
   // A flag the player cannot reach is a broken mission. Labs that plant flags at start
   // time rather than in the image have no rootfs, so this stays a warning.
   if (mission.flag && existsSync(join(labDir, 'rootfs'))) {
     const planted = grepTree(join(labDir, 'rootfs'), mission.flag);
     if (!planted) {
-      warnings.push(`${rel}: flag is not planted anywhere in labs/${mission.environment.image}/rootfs`);
+      warnings.push(
+        `${rel}: flag is not planted anywhere in labs/${mission.environment.image}/rootfs`,
+      );
     }
   }
 
@@ -202,7 +206,8 @@ for (const m of missions) {
 }
 const flags = missions.map((m) => m.flag).filter(Boolean);
 for (const flag of new Set(flags)) {
-  if (flags.filter((f) => f === flag).length > 1) crossErrors.push(`duplicate flag reused across missions`);
+  if (flags.filter((f) => f === flag).length > 1)
+    crossErrors.push(`duplicate flag reused across missions`);
 }
 
 if (crossErrors.length) {
@@ -216,5 +221,7 @@ if (warnings.length) {
   for (const w of warnings) console.warn(`    ${w}`);
 }
 
-console.log(`\n${missions.length} mission(s) checked, ${failures} file(s)/check(s) failed, ${warnings.length} warning(s).`);
+console.log(
+  `\n${missions.length} mission(s) checked, ${failures} file(s)/check(s) failed, ${warnings.length} warning(s).`,
+);
 process.exit(failures ? 1 : 0);

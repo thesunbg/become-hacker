@@ -37,9 +37,21 @@ export type GameEvent =
     })
   | (GameEventBase & { readonly type: 'SERVICE_DISCOVERED'; readonly service: string })
   | (GameEventBase & { readonly type: 'LOG_ANALYSIS'; readonly evidence: string })
-  | (GameEventBase & { readonly type: 'CONFIG_CHANGED'; readonly key: string; readonly value: string })
-  | (GameEventBase & { readonly type: 'ANSWER_SUBMITTED'; readonly answer: string; readonly correct: boolean })
-  | (GameEventBase & { readonly type: 'HINT_USED'; readonly level: number; readonly xpCost: number })
+  | (GameEventBase & {
+      readonly type: 'CONFIG_CHANGED';
+      readonly key: string;
+      readonly value: string;
+    })
+  | (GameEventBase & {
+      readonly type: 'ANSWER_SUBMITTED';
+      readonly answer: string;
+      readonly correct: boolean;
+    })
+  | (GameEventBase & {
+      readonly type: 'HINT_USED';
+      readonly level: number;
+      readonly xpCost: number;
+    })
   | (GameEventBase & { readonly type: 'FLAG_SUBMITTED'; readonly correct: boolean })
   | (GameEventBase & { readonly type: 'MISSION_COMPLETED'; readonly score: number })
   | (GameEventBase & { readonly type: 'MISSION_FAILED'; readonly reason: string })

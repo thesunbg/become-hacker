@@ -10,13 +10,4 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
   async onModuleDestroy(): Promise<void> {
     await this.$disconnect();
   }
-
-  /** Test-only helper: clears game state while leaving the schema in place. */
-  async truncateAll(): Promise<void> {
-    await this.$executeRawUnsafe(`
-      TRUNCATE TABLE lab_events, lab_sessions, xp_transactions, user_skills,
-                     user_missions, audit_logs, profiles, users, missions
-      RESTART IDENTITY CASCADE
-    `);
-  }
 }

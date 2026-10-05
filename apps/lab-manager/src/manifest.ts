@@ -61,7 +61,9 @@ export function parseManifest(image: string, raw: unknown): LabManifest {
         ? workingDir
         : DEFAULT_MANIFEST.workingDir,
     command:
-      Array.isArray(command) && command.every((part) => typeof part === 'string') && command.length > 0
+      Array.isArray(command) &&
+      command.every((part) => typeof part === 'string') &&
+      command.length > 0
         ? (command as string[])
         : DEFAULT_MANIFEST.command,
     writablePaths:

@@ -2,26 +2,9 @@ import { Injectable } from '@nestjs/common';
 import type { MissionSkillReward } from '@zero-root/types';
 import { PrismaService } from '../prisma/prisma.service';
 
-/** Level curve: each level costs progressively more, so progress slows without stalling. */
-export const LEVEL_BASE_XP = 250;
-
-export function levelForXp(xp: number): number {
-  if (xp <= 0) return 1;
-  // xp = BASE * level * (level + 1) / 2  ->  solve for level
-  return Math.max(1, Math.floor((Math.sqrt(1 + (8 * xp) / LEVEL_BASE_XP) - 1) / 2) + 1);
-}
-
-export function xpForLevel(level: number): number {
-  if (level <= 1) return 0;
-  return (LEVEL_BASE_XP * (level - 1) * level) / 2;
-}
-
-export function levelProgress(xp: number): { level: number; into: number; needed: number } {
-  const level = levelForXp(xp);
-  const floor = xpForLevel(level);
-  const ceiling = xpForLevel(level + 1);
-  return { level, into: xp - floor, needed: Math.max(1, ceiling - floor) };
-}
+// The level curve is shared with the web client: if the server awarded XP on one curve and
+// the dashboard drew the bar on another, a player's level would change when they reloaded.
+export { levelForXp, levelProgress, xpForLevel, LEVEL_BASE_XP } from '@zero-root/shared';
 
 /**
  * XP as an append-only ledger (CLAUDE.md rule 5).

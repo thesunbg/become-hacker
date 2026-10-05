@@ -23,37 +23,43 @@ React frontend → NestJS API → PostgreSQL → Redis → Docker sandbox
 
 ## Sprints
 
-| Sprint | Goal | Tasks |
-| --- | --- | --- |
-| **1** | Working vertical slice skeleton | monorepo · React · NestJS · PostgreSQL · Redis · Docker Compose · authentication · user profile · dashboard · mission model · mission API · mission page · lab session model · terminal UI |
-| **2** | First playable mission | Linux sandbox · terminal backend · WebSocket · command execution · mission objective engine · flag validation · XP · mission completion · hint system |
-| **3** | Chapter 1, part 1 | missions 01–05, then **test with real beginners** |
-| **4** | Chapter 1 complete | missions 06–10 |
-| **5** | Chapter 2 starts | network sandbox: Linux client, Linux server, DNS, HTTP, multiple ports |
-| **6** | Chapter 3 starts | web sandbox: browser, web server, database, authentication |
+| Sprint   | Goal                            | Tasks                                                                                                                                                                                      |
+| -------- | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **1** ✅ | Working vertical slice skeleton | monorepo · React · NestJS · PostgreSQL · Redis · Docker Compose · authentication · user profile · dashboard · mission model · mission API · mission page · lab session model · terminal UI |
+| **2** ✅ | First playable mission          | Linux sandbox · terminal backend · WebSocket · command execution · mission objective engine · flag validation · XP · mission completion · hint system                                      |
+| **3**    | Chapter 1, part 1               | missions 01–05, then **test with real beginners**                                                                                                                                          |
+| **4**    | Chapter 1 complete              | missions 06–10                                                                                                                                                                             |
+| **5**    | Chapter 2 starts                | network sandbox: Linux client, Linux server, DNS, HTTP, multiple ports                                                                                                                     |
+| **6**    | Chapter 3 starts                | web sandbox: browser, web server, database, authentication                                                                                                                                 |
+
+Sprints 1 and 2 are done: the slice is playable, missions 001 and 002 ship, and the hint
+system, XP ledger and knowledge review all work. Sprint 3 is next — missions 003–010, and then
+testing with real beginners, which is the part that actually decides whether any of this works.
 
 ## MVP definition of done
+
+Where it stands today:
 
 ```
 ✓ User can register              ✓ Player can submit flag
 ✓ User can login                 ✓ Server validates flag
 ✓ User can see progression       ✓ XP is awarded
 ✓ User can start a mission       ✓ Hints work
-✓ User gets isolated lab         ✓ Notebook works
+✓ User gets isolated lab         ✗ Notebook works
 ✓ User gets terminal             ✓ Mission history works
-✓ Commands execute safely        ✓ 30 missions playable
+✓ Commands execute safely        ✗ 30 missions playable  (2 of 30)
 ✓ Mission engine detects         ✓ Chapter progression works
   objectives                     ✓ No production network access
 ```
 
 ## Priorities
 
-| | Features |
-| --- | --- |
+|        | Features                                                                                  |
+| ------ | ----------------------------------------------------------------------------------------- |
 | **P0** | authentication · mission engine · terminal · sandbox · flag validation · XP · progression |
-| **P1** | hints · notebook · skill tree · achievements · analytics |
-| **P2** | AI mentor · story · leaderboard · daily challenge |
-| **P3** | multiplayer · red team · blue team · cyber war |
+| **P1** | hints · notebook · skill tree · achievements · analytics                                  |
+| **P2** | AI mentor · story · leaderboard · daily challenge                                         |
+| **P3** | multiplayer · red team · blue team · cyber war                                            |
 
 ## Testing
 

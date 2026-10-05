@@ -15,26 +15,51 @@ documents constrain everything else:
 
 ## Current state
 
-Pre-MVP. The repo holds the spec, monorepo scaffolding, the mission content format with
-missions 001–002 authored as data, and the `linux-basic` lab image. **No application code exists
-yet.** The next step is Vertical Slice #1 (`docs/07-roadmap.md`).
+**Vertical Slice #1 is built and playable.** Register → sign in → dashboard → mission 01 → lab →
+terminal → find the hidden file → submit the flag → mission complete → XP, all working end to
+end, plus mission 02 and the hint system.
+
+```
+apps/api            NestJS + Prisma + Postgres + Redis — auth, missions, labs, terminal, XP
+apps/web            React + Vite + Tailwind + xterm.js
+apps/lab-manager    container lifecycle; the only thing that touches the Docker socket
+packages/types      contracts, with the no-flags-to-the-client rule as a compile error
+packages/mission-engine  pure objective/score engine
+packages/shared     the level curve, shared so client and server cannot disagree
+```
+
+354 tests. The API's are integration tests against real Postgres and Redis.
+
+Not built yet: `apps/admin`, the notebook, achievements, chapters 2–3 and their labs. Mission
+content stops at 002 of the planned 30.
 
 ## Commands
 
 ```bash
 pnpm install
+pnpm infra:up            # postgres + redis via docker compose
+pnpm --filter @zero-root/api db:migrate   # apply migrations
 pnpm dev                 # turbo run dev across apps
+
 pnpm build
 pnpm test
-pnpm lint
 pnpm typecheck
+pnpm format              # prettier; format:check runs in CI
 pnpm content:validate    # validate mission JSON — dependency-free, works in a bare checkout
-pnpm infra:up            # postgres + redis via docker compose
-pnpm infra:down
 ```
 
 `pnpm content:validate` is the one check that runs without `pnpm install`. Run it after touching
 anything under `content/`.
+
+### Running the game
+
+Four processes: Postgres, Redis, `apps/api` and `apps/web`. `apps/lab-manager` needs a Docker
+daemon; without one it refuses to start labs rather than running anything outside a container,
+so the terminal will report the lab service as unavailable.
+
+The API's tests need a database. They read `TEST_DATABASE_URL` (default
+`postgresql://zeroroot:zeroroot@localhost:5432/zeroroot_test`) and a dedicated Redis database,
+and `test/global-setup.ts` migrates it before the suite runs.
 
 ## Stack
 
@@ -99,17 +124,31 @@ When authoring:
   (game concept → security concept → real world).
 - **Penalties stay mild.** Failure is a designed step in the learning arc, not a punishment.
 
+## Things that are easy to get wrong here, learned the hard way
+
+- **Rebuild packages before running an app against them.** `apps/api` resolves
+  `@zero-root/mission-engine` from `dist/`, so an engine change that is not rebuilt is not
+  running. `pnpm test` builds dependencies first; invoking `vitest` directly does not.
+- **The dual-built packages need their module-type markers.** They declare `"type": "module"`,
+  which Node applies to the CommonJS output too, so each build writes a nested `package.json`
+  via `scripts/mark-module-type.mjs`. Without it `require()` fails at runtime while type
+  checking and the tests still pass.
+- **Vitest needs SWC for anything with Nest decorators.** esbuild strips types without emitting
+  decorator metadata, and every injected dependency arrives `undefined`.
+- **Load order matters at startup.** `ContentService` loads content in its constructor rather
+  than `onModuleInit`, because the mission registry's hook ran first and synced nothing.
+
 ## Scope discipline
 
 The spec describes twelve chapters and a multiplayer cyber war. The MVP is **three chapters and
 thirty missions**, and the current task is a single vertical slice. Do not build ahead:
 
-| | |
-| --- | --- |
-| **Build now** | authentication · mission engine · terminal · sandbox · flag validation · XP · progression |
-| **Later (P1)** | hints · notebook · skill tree · achievements · analytics |
-| **Later (P2)** | AI mentor · story systems · leaderboard · daily challenge |
-| **Not yet (P3)** | multiplayer · red team · blue team · cyber war |
+|                  |                                                                                           |
+| ---------------- | ----------------------------------------------------------------------------------------- |
+| **Build now**    | authentication · mission engine · terminal · sandbox · flag validation · XP · progression |
+| **Later (P1)**   | hints · notebook · skill tree · achievements · analytics                                  |
+| **Later (P2)**   | AI mentor · story systems · leaderboard · daily challenge                                 |
+| **Not yet (P3)** | multiplayer · red team · blue team · cyber war                                            |
 
 Also explicitly out of scope: real money, NFT, blockchain, mobile app, marketplace, social
 network, AI-generated missions, Kubernetes.

@@ -94,7 +94,10 @@ export function observeCommand(
       }
     }
 
-    if (!failed && (parsed.program === 'ss' || parsed.program === 'netstat' || parsed.program === 'nmap')) {
+    if (
+      !failed &&
+      (parsed.program === 'ss' || parsed.program === 'netstat' || parsed.program === 'nmap')
+    ) {
       for (const match of (output ?? '').matchAll(/(?:^|[\s:])(\d{1,5})\/(?:tcp|udp)\b/gi)) {
         const port = Number.parseInt(match[1] as string, 10);
         if (port > 0 && port <= 65535) ports.push(port);

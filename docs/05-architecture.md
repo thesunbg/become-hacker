@@ -26,16 +26,16 @@ Monorepo tooling: **pnpm workspaces + Turborepo** (`pnpm dev` / `build` / `test`
 
 ## Stack
 
-| Layer | Choice |
-| --- | --- |
-| Frontend | React · TypeScript · Vite · Tailwind CSS |
-| Terminal | **xterm.js** |
-| State | Zustand |
-| Routing | React Router |
-| Backend | Node.js · TypeScript · **NestJS** (Fastify is the acceptable alternative) |
-| Database | **PostgreSQL** via Prisma |
-| Cache/queues | Redis |
-| Transport | WebSocket for terminal, lab status, mission events, notifications |
+| Layer        | Choice                                                                    |
+| ------------ | ------------------------------------------------------------------------- |
+| Frontend     | React · TypeScript · Vite · Tailwind CSS                                  |
+| Terminal     | **xterm.js**                                                              |
+| State        | Zustand                                                                   |
+| Routing      | React Router                                                              |
+| Backend      | Node.js · TypeScript · **NestJS** (Fastify is the acceptable alternative) |
+| Database     | **PostgreSQL** via Prisma                                                 |
+| Cache/queues | Redis                                                                     |
+| Transport    | WebSocket for terminal, lab status, mission events, notifications         |
 
 TypeScript **strict mode** everywhere.
 

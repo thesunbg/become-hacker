@@ -1,6 +1,6 @@
 import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { Inject, Injectable, Logger, type OnModuleInit } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import type { MissionDefinition } from '@zero-root/types';
 import { sortMissions } from '@zero-root/mission-engine';
 import { APP_CONFIG, type AppConfig } from '../config/configuration';
@@ -17,13 +17,19 @@ import { APP_CONFIG, type AppConfig } from '../config/configuration';
  * as a file rather than a deployment of new code.
  */
 @Injectable()
-export class ContentService implements OnModuleInit {
+export class ContentService {
   private readonly logger = new Logger(ContentService.name);
   private missions = new Map<string, MissionDefinition>();
 
-  constructor(@Inject(APP_CONFIG) private readonly config: AppConfig) {}
-
-  onModuleInit(): void {
+  /**
+   * Content loads in the constructor rather than in `onModuleInit`.
+   *
+   * Lifecycle hooks run in module-resolution order, and MissionRegistryService's hook fired
+   * first — so the registry synced an empty content set and published nothing. Loading here
+   * means any consumer sees loaded content however the hooks happen to be ordered. It is
+   * synchronous file reading with no dependencies, so there is nothing to await.
+   */
+  constructor(@Inject(APP_CONFIG) private readonly config: AppConfig) {
     this.load();
   }
 

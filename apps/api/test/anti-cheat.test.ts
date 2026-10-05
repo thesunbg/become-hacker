@@ -270,9 +270,9 @@ describe('one player cannot reach another player lab', () => {
     const owner = await register();
     const lab = await owner.post('/api/labs', { missionId: 'ch01-mission-001' });
 
-    await expect(
-      TerminalClient.connect(harness.baseUrl, lab.body.sessionId, ''),
-    ).rejects.toThrow(/401/);
+    await expect(TerminalClient.connect(harness.baseUrl, lab.body.sessionId, '')).rejects.toThrow(
+      /401/,
+    );
   });
 
   it('refuses to destroy a lab owned by someone else', async () => {
@@ -297,11 +297,9 @@ describe('one player cannot reach another player lab', () => {
 describe('CSRF', () => {
   it('refuses a state-changing request from another origin', async () => {
     const player = await register();
-    const response = await player.post(
-      '/api/missions/ch01-mission-001/start',
-      undefined,
-      { origin: 'https://evil.example' },
-    );
+    const response = await player.post('/api/missions/ch01-mission-001/start', undefined, {
+      origin: 'https://evil.example',
+    });
     expect(response.status).toBe(403);
   });
 
@@ -433,7 +431,11 @@ describe('credentials', () => {
     const id = unique();
     const email = `throttle-${id}@example.test`;
     const client = new Client(harness.baseUrl);
-    await client.post('/api/auth/register', { email, username: `thr_${id}`, password: 'a-long-enough-password' });
+    await client.post('/api/auth/register', {
+      email,
+      username: `thr_${id}`,
+      password: 'a-long-enough-password',
+    });
 
     let throttled = false;
     for (let attempt = 0; attempt < 15; attempt++) {
@@ -451,7 +453,11 @@ describe('credentials', () => {
 
   it('writes an audit trail for sign-in activity', async () => {
     const logs = await harness.prisma.auditLog.findMany({
-      where: { action: { in: ['auth.register', 'auth.login', 'auth.login.failed', 'auth.login.throttled'] } },
+      where: {
+        action: {
+          in: ['auth.register', 'auth.login', 'auth.login.failed', 'auth.login.throttled'],
+        },
+      },
     });
     expect(logs.length).toBeGreaterThan(0);
     expect(JSON.stringify(logs)).not.toContain('a-long-enough-password');

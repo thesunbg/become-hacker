@@ -1,6 +1,11 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import type { MissionProgress, MissionResult, MissionState } from '@zero-root/types';
-import { evaluateMission, isUnlocked, missionState, resultForMission } from '@zero-root/mission-engine';
+import {
+  evaluateMission,
+  isUnlocked,
+  missionState,
+  resultForMission,
+} from '@zero-root/mission-engine';
 import { ContentService } from '../content/content.service';
 import { EventsService } from '../events/events.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -81,7 +86,10 @@ export class ProgressService {
    * Called after every action that could change progress. Returns the result the player is
    * shown when the mission has just been finished.
    */
-  async sync(userId: string, missionId: string): Promise<{
+  async sync(
+    userId: string,
+    missionId: string,
+  ): Promise<{
     progress: MissionProgress;
     result: MissionResult | null;
   }> {
@@ -115,8 +123,7 @@ export class ProgressService {
         attempts: progress.attempts,
         bestScore: Math.max(existing?.bestScore ?? 0, result.score),
         bestRating: Math.max(existing?.bestRating ?? 0, result.rating),
-        completedAt:
-          progress.state === 'COMPLETED' ? (existing?.completedAt ?? new Date()) : null,
+        completedAt: progress.state === 'COMPLETED' ? (existing?.completedAt ?? new Date()) : null,
       },
     });
 
@@ -135,12 +142,21 @@ export class ProgressService {
     return { progress, result: progress.state === 'COMPLETED' ? result : null };
   }
 
-  /** Records the start of an attempt. Idempotent while an attempt is already in flight. */
+  /**
+   * Records the start of an attempt. Idempotent while an attempt is already in flight.
+   *
+   * The condition is `attempts`, not the mission state. Keying off the state meant that a
+   * player who bought a hint before entering the lab was already IN_PROGRESS, so no start
+   * event was ever recorded — and with nothing to measure from, the engine reported an
+   * elapsed time of zero and the mission silently lost its efficiency bonus.
+   */
   async start(userId: string, missionId: string): Promise<MissionProgress> {
     await this.assertUnlocked(userId, missionId);
 
     const progress = await this.evaluate(userId, missionId);
-    if (progress.state === 'AVAILABLE' || progress.state === 'ABANDONED' || progress.state === 'FAILED') {
+    const needsStart =
+      progress.attempts === 0 || progress.state === 'ABANDONED' || progress.state === 'FAILED';
+    if (needsStart) {
       await this.events.record(userId, missionId, 'MISSION_STARTED');
     }
     return (await this.sync(userId, missionId)).progress;

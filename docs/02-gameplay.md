@@ -44,15 +44,15 @@ Worked example:
 
 ## XP
 
-| Earns XP | Costs XP |
-| --- | --- |
-| Mission completion | Using a hint |
-| First-attempt solve | Unnecessary action |
-| No hints used | Repeated failure |
-| Efficient solution | Triggering an alarm |
-| Correct reasoning | |
-| Bonus objectives | |
-| Finding hidden information | |
+| Earns XP                   | Costs XP            |
+| -------------------------- | ------------------- |
+| Mission completion         | Using a hint        |
+| First-attempt solve        | Unnecessary action  |
+| No hints used              | Repeated failure    |
+| Efficient solution         | Triggering an alarm |
+| Correct reasoning          |                     |
+| Bonus objectives           |                     |
+| Finding hidden information |                     |
 
 **Keep penalties mild.** The purpose is learning, not punishment.
 
@@ -147,7 +147,7 @@ Severity: `INFO · LOW · MEDIUM · HIGH · CRITICAL` (map to CVSS later).
 ## Chapter certificate
 
 On chapter completion, issue an in-game certificate showing score and skill deltas. Advanced
-tracks may later be *mapped to* recognised frameworks — **never claim official certification.**
+tracks may later be _mapped to_ recognised frameworks — **never claim official certification.**
 
 ## Post-MVP engagement systems
 
@@ -164,6 +164,6 @@ tracks may later be *mapped to* recognised frameworks — **never claim official
 A continuous narrative across chapters. The player receives an old laptop from an unknown
 person. On it, `README.txt`:
 
-> *"If you want to understand the Internet, stop using it like a normal user."*
+> _"If you want to understand the Internet, stop using it like a normal user."_
 
 Investigating leads to a mysterious hacker group: **NULL**.

@@ -36,11 +36,7 @@ export class LabManagerClient {
     }
   }
 
-  async create(input: {
-    image: string;
-    missionId: string;
-    userId: string;
-  }): Promise<CreatedLab> {
+  async create(input: { image: string; missionId: string; userId: string }): Promise<CreatedLab> {
     const response = await this.request('/labs', {
       method: 'POST',
       body: JSON.stringify(input),

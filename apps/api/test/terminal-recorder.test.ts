@@ -1,9 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  MAX_OUTPUT_CHARS,
-  TerminalRecorder,
-  stripAnsi,
-} from '../src/terminal/terminal-recorder';
+import { MAX_OUTPUT_CHARS, TerminalRecorder, stripAnsi } from '../src/terminal/terminal-recorder';
 
 describe('stripAnsi', () => {
   it('removes colour codes so text matching sees what the player sees', () => {
