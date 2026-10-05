@@ -165,7 +165,14 @@ export class TerminalRecorder {
    * trusted instead.
    */
   private commandFromEcho(typed: string): string | null {
-    const lines = stripAnsi(this.echo).split(/\r?\n/);
+    // A lone carriage return starts a line too, not only CRLF. Every bash that enables
+    // bracketed paste ends its reset with `ESC[?2004l\r`, so from the second command of a
+    // session onwards the echo's last line begins with a bare CR — and `.` in a JavaScript
+    // regex never matches one. Splitting only on newlines left the prompt unmatchable there,
+    // which silently reduced every command after the first to the keystrokes behind it: a
+    // Tab-completed or recalled command was recorded as the fragment that was typed, and the
+    // objective it satisfied never ticked.
+    const lines = stripAnsi(this.echo).split(/\r\n|\r|\n/);
     const lastLine = lines[lines.length - 1] ?? '';
 
     // Greedy, so it finds the *last* prompt on the line.

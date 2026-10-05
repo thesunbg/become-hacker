@@ -1,4 +1,5 @@
 import type { Server as HttpServer } from 'node:http';
+import { StringDecoder } from 'node:string_decoder';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { WebSocket, WebSocketServer } from 'ws';
 import type { TerminalClientMessage, TerminalServerMessage } from '@zero-root/types';
@@ -21,6 +22,14 @@ export const TERMINAL_PATH = '/ws/terminal';
  * the output that satisfied it.
  */
 export const SETTLE_IDLE_MS = 400;
+
+/** Whatever shape `ws` hands over — Buffer, fragments, ArrayBuffer — as bytes. */
+function toBytes(data: unknown): Buffer {
+  if (Buffer.isBuffer(data)) return data;
+  if (Array.isArray(data)) return Buffer.concat(data as Buffer[]);
+  if (data instanceof ArrayBuffer) return Buffer.from(data);
+  return Buffer.from(String(data), 'utf8');
+}
 
 /**
  * The terminal gateway.
@@ -138,14 +147,28 @@ export class TerminalGateway {
 
     upstream.on('open', () => send({ type: 'ready' }));
 
+    // The container's output is a byte stream, not a sequence of strings. A frame can end in
+    // the middle of a multi-byte character — which in Vietnamese is most of them — and
+    // decoding each frame on its own turns that character into two replacement marks, on the
+    // player's screen and in the recorded output alike. The decoder holds the partial
+    // sequence until the rest of it arrives.
+    const decoder = new StringDecoder('utf8');
+
     upstream.on('message', (data) => {
-      const text = data.toString();
+      const text = decoder.write(toBytes(data));
+      if (text === '') return;
       recorder.onOutput(text);
       send({ type: 'output', data: text });
       settleSoon();
     });
 
     upstream.on('close', () => {
+      // A truncated character at the very end would otherwise be dropped silently.
+      const tail = decoder.end();
+      if (tail !== '') {
+        recorder.onOutput(tail);
+        send({ type: 'output', data: tail });
+      }
       const last = recorder.flush();
       if (last !== null) record(last.command, last.output);
       send({ type: 'closed', reason: 'The lab has shut down.' });

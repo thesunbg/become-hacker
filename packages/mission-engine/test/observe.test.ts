@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { looksLikeFailure, observeCommand, observeStream } from '../src/observe.js';
+import { looksLikeFailure, observeCommand, observeStream, portsInOutput } from '../src/observe.js';
 import { parseCommand } from '../src/command.js';
 import { applyCd } from '../src/observe.js';
 import { Stream } from './helpers.js';
@@ -127,5 +127,49 @@ describe('observeStream', () => {
       path: '/etc/shadow',
     });
     expect([...observeStream(stream.events, HOME).filesRead]).toEqual(['/etc/shadow']);
+  });
+});
+
+describe('portsInOutput', () => {
+  it('reads the nmap form, port and protocol together', () => {
+    expect(portsInOutput('22/tcp   open  ssh\n8080/tcp open  http-proxy')).toEqual([22, 8080]);
+  });
+
+  it('reads the ss form, where the port closes an address', () => {
+    const output = [
+      'State  Recv-Q Send-Q Local Address:Port  Peer Address:Port',
+      'LISTEN 0      128          0.0.0.0:22         0.0.0.0:*',
+      'LISTEN 0      511        127.0.0.1:8080       0.0.0.0:*',
+    ].join('\n');
+    expect(portsInOutput(output)).toEqual([22, 8080]);
+  });
+
+  it('reads a bracketed IPv6 address', () => {
+    expect(portsInOutput('LISTEN 0 128 [::]:443 [::]:*')).toEqual([443]);
+  });
+
+  it('reports each port once, however many sockets are listening on it', () => {
+    expect(portsInOutput('0.0.0.0:80 x\n127.0.0.1:80 y\n[::]:80 z')).toEqual([80]);
+  });
+
+  it('does not mistake a URL path for a port', () => {
+    expect(portsInOutput('http://bank.local:8080/admin')).toEqual([]);
+  });
+
+  it('ignores the wildcard peer column, which names no port', () => {
+    expect(portsInOutput('0.0.0.0:*  [::]:*')).toEqual([]);
+  });
+
+  it('rejects a number too large to be a port', () => {
+    expect(portsInOutput('0.0.0.0:99999 x')).toEqual([]);
+  });
+
+  it('finds nothing in output that lists no sockets', () => {
+    expect(portsInOutput('Cannot open netlink socket: Permission denied')).toEqual([]);
+  });
+
+  it('reads a port out of lsof, which also names listening sockets', () => {
+    const output = 'nginx  901  root  6u  IPv4  18221  0t0  TCP *:8080 (LISTEN)';
+    expect(observeCommand('lsof -i -P -n', HOME, output, HOME).ports).toEqual([8080]);
   });
 });

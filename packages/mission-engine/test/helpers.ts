@@ -64,6 +64,52 @@ export class Stream {
     return this;
   }
 
+  file(path: string): this {
+    this.events.push({ ...this.base(), type: 'FILE_FOUND', path });
+    return this;
+  }
+
+  text(text: string): this {
+    this.events.push({ ...this.base(), type: 'TEXT_FOUND', text });
+    return this;
+  }
+
+  log(evidence: string): this {
+    this.events.push({ ...this.base(), type: 'LOG_ANALYSIS', evidence });
+    return this;
+  }
+
+  service(service: string): this {
+    this.events.push({ ...this.base(), type: 'SERVICE_DISCOVERED', service });
+    return this;
+  }
+
+  config(key: string, value: string): this {
+    this.events.push({ ...this.base(), type: 'CONFIG_CHANGED', key, value });
+    return this;
+  }
+
+  http(method: string, url: string, status?: number): this {
+    this.events.push({
+      ...this.base(),
+      type: 'HTTP_REQUEST',
+      method,
+      url,
+      ...(status !== undefined ? { status } : {}),
+    });
+    return this;
+  }
+
+  completedEvent(score: number): this {
+    this.events.push({ ...this.base(), type: 'MISSION_COMPLETED', score });
+    return this;
+  }
+
+  achievement(achievement: string): this {
+    this.events.push({ ...this.base(), type: 'ACHIEVEMENT_UNLOCKED', achievement });
+    return this;
+  }
+
   abandoned(): this {
     this.events.push({ ...this.base(), type: 'MISSION_ABANDONED' });
     return this;

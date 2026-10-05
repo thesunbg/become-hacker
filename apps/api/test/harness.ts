@@ -164,17 +164,33 @@ export class TerminalClient {
 
   /** Types a command one character at a time, then Enter — exactly as a player would. */
   async type(command: string): Promise<void> {
+    await this.submit(command);
+    // Long enough for the output to arrive and the idle timer to bank the command.
+    await sleep(700);
+  }
+
+  /**
+   * Types a command and returns as soon as it is sent, before the idle timer banks it.
+   *
+   * For tests that need to inject output of their own into the window where the command is
+   * still open; `type` waits past the settle, by which point the record is closed.
+   */
+  async submit(command: string): Promise<void> {
     for (const char of command) {
       this.socket.send(JSON.stringify({ type: 'input', data: char }));
       await sleep(1);
     }
     this.socket.send(JSON.stringify({ type: 'input', data: '\r' }));
-    // Long enough for the output to arrive and the idle timer to bank the command.
-    await sleep(700);
+    await sleep(60);
   }
 
   resize(cols: number, rows: number): void {
     this.socket.send(JSON.stringify({ type: 'resize', cols, rows }));
+  }
+
+  /** Sends a frame verbatim, for protocol cases a well-behaved client never produces. */
+  sendText(data: string): void {
+    this.socket.send(data);
   }
 
   async close(): Promise<void> {

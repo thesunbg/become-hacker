@@ -1,5 +1,6 @@
 import Docker from 'dockerode';
 import type { Duplex } from 'node:stream';
+import { StringDecoder } from 'node:string_decoder';
 import { assertSpecIsSafe, type SandboxSpec } from './sandbox-spec.js';
 import {
   SandboxUnavailableError,
@@ -77,8 +78,20 @@ export class DockerDriver implements SandboxDriver {
         void container.resize({ w: cols, h: rows }).catch(() => undefined);
       },
       onData(listener: (chunk: string) => void): void {
-        // The container has a TTY, so the stream is raw rather than multiplexed.
-        stream.on('data', (chunk: Buffer) => listener(chunk.toString('utf8')));
+        // The container has a TTY, so the stream is raw rather than multiplexed. Decoding is
+        // per *stream*, not per chunk: a read ends wherever the pipe happens to break, which
+        // can be halfway through a multi-byte character — and most characters in the game's
+        // Vietnamese content are multi-byte. Decoding each chunk alone would turn one of them
+        // into two replacement marks on the player's screen and in the recorded output.
+        const decoder = new StringDecoder('utf8');
+        stream.on('data', (chunk: Buffer) => {
+          const text = decoder.write(chunk);
+          if (text !== '') listener(text);
+        });
+        stream.on('end', () => {
+          const tail = decoder.end();
+          if (tail !== '') listener(tail);
+        });
       },
       onClose(listener: () => void): void {
         if (closed) listener();

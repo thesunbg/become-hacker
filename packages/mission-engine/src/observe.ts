@@ -57,6 +57,35 @@ export function applyCd(cwd: string, parsed: ParsedCommand, home: string): strin
   return resolvePath(cwd, target, home);
 }
 
+/** Commands whose output names listening or open ports. */
+const PORT_LISTERS = new Set(['ss', 'netstat', 'nmap', 'lsof']);
+
+/**
+ * Ports named in the output of a port-listing command.
+ *
+ * Two formats, because the tools disagree. `nmap` prints the port with its protocol —
+ * `8080/tcp open http-proxy` — while `ss` and `netstat` print it on the end of an address:
+ * `127.0.0.1:8080`, `0.0.0.0:22`, `[::]:80`. Reading only the first form would make a
+ * PORT_FOUND objective undetectable for every player who reached for `ss`, which is the
+ * tool actually installed in the labs.
+ */
+export function portsInOutput(output: string): number[] {
+  const found = new Set<number>();
+
+  const add = (raw: string | undefined): void => {
+    const port = Number.parseInt(raw ?? '', 10);
+    if (Number.isFinite(port) && port > 0 && port <= 65535) found.add(port);
+  };
+
+  // nmap: `22/tcp open ssh`.
+  for (const match of output.matchAll(/(?:^|[\s:])(\d{1,5})\/(?:tcp|udp)\b/gi)) add(match[1]);
+  // ss and netstat: the port closes an address field, so whitespace or the line ends it.
+  // The lookahead is what keeps `http://bank.local:8080/admin` out of a port list.
+  for (const match of output.matchAll(/:(\d{1,5})(?=\s|$)/gm)) add(match[1]);
+
+  return [...found];
+}
+
 export interface DerivedDiscoveries {
   /** Absolute paths the player successfully read. */
   readonly filesRead: readonly string[];
@@ -94,14 +123,8 @@ export function observeCommand(
       }
     }
 
-    if (
-      !failed &&
-      (parsed.program === 'ss' || parsed.program === 'netstat' || parsed.program === 'nmap')
-    ) {
-      for (const match of (output ?? '').matchAll(/(?:^|[\s:])(\d{1,5})\/(?:tcp|udp)\b/gi)) {
-        const port = Number.parseInt(match[1] as string, 10);
-        if (port > 0 && port <= 65535) ports.push(port);
-      }
+    if (!failed && PORT_LISTERS.has(parsed.program)) {
+      for (const port of portsInOutput(output ?? '')) ports.push(port);
     }
   }
 

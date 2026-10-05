@@ -23,6 +23,18 @@ const ROOTFS = join(repoRoot, 'labs/linux-basic/rootfs');
 const HOME = '/home/player';
 const PROMPT = 'player@laptop:~$ ';
 
+/**
+ * Bracketed paste, which every bash new enough to be in a lab image turns on.
+ *
+ * It is here because its absence hid a real bug. Bash wraps each prompt in these, and the
+ * reset ends with a bare carriage return — so from the second command onwards the echo's
+ * last line starts with `\r`. A simulation that prints a bare prompt never produces that
+ * line, and the recorder's prompt matching was broken for exactly that case while every
+ * test against the simulation passed.
+ */
+const PASTE_ON = '\u001b[?2004h';
+const PASTE_OFF = '\u001b[?2004l\r';
+
 function normalize(path: string): string {
   const absolute = path.startsWith('/');
   const out: string[] = [];
@@ -137,6 +149,15 @@ export interface FakeLabManager {
   readonly destroyed: string[];
   /** Set to make lab creation fail, as an unreachable container runtime would. */
   available: boolean;
+  /**
+   * Sends raw bytes down the most recent terminal attachment, bypassing the simulated shell.
+   *
+   * For the cases a simulation cannot reach: output split mid-character across two frames,
+   * a binary file's NUL bytes, a flood that outruns the output cap.
+   */
+  sendRaw(data: string | Uint8Array): void;
+  /** How many terminals are attached right now. */
+  readonly attachedCount: number;
   close(): Promise<void>;
 }
 
@@ -144,6 +165,7 @@ export async function startFakeLabManager(token: string): Promise<FakeLabManager
   const created: { image: string; missionId: string; userId: string }[] = [];
   const destroyed: string[] = [];
   const labs = new Map<string, SimulatedShell>();
+  const attached: { labId: string; ws: WebSocket }[] = [];
   const state = { available: true };
 
   const authorized = (headers: Record<string, unknown>): boolean =>
@@ -191,6 +213,12 @@ export async function startFakeLabManager(token: string): Promise<FakeLabManager
         const labId = match[1] as string;
         destroyed.push(labId);
         labs.delete(labId);
+        // A destroyed container takes its shell with it, so anything attached to it loses
+        // the connection. Without this the gateway never learns the lab is gone and the
+        // player sits in front of a terminal that silently answers nothing.
+        for (const entry of [...attached]) {
+          if (entry.labId === labId) entry.ws.close();
+        }
         res.writeHead(200, { 'content-type': 'application/json' });
         res.end(JSON.stringify({ destroyed: true }));
         return;
@@ -215,7 +243,12 @@ export async function startFakeLabManager(token: string): Promise<FakeLabManager
 
     wss.handleUpgrade(req, socket, head, (ws: WebSocket) => {
       // The real container's bash prints a prompt on attach.
-      ws.send(PROMPT);
+      ws.send(PASTE_ON + PROMPT);
+      attached.push({ labId, ws });
+      ws.on('close', () => {
+        const index = attached.findIndex((entry) => entry.ws === ws);
+        if (index !== -1) attached.splice(index, 1);
+      });
       let line = '';
 
       ws.on('message', (raw) => {
@@ -224,7 +257,7 @@ export async function startFakeLabManager(token: string): Promise<FakeLabManager
 
         for (const char of data) {
           if (char === '\r' || char === '\n') {
-            ws.send('\r\n'); // the shell echoes the newline
+            ws.send(`\r\n${PASTE_OFF}`); // the shell echoes the newline, then resets paste mode
             const command = line.trim();
             line = '';
             if (command !== '') {
@@ -233,7 +266,7 @@ export async function startFakeLabManager(token: string): Promise<FakeLabManager
               // Without matching that here, output staircases down the screen.
               if (output !== '') ws.send(`${output.replace(/\r?\n/g, '\r\n')}\r\n`);
             }
-            ws.send(PROMPT);
+            ws.send(PASTE_ON + PROMPT);
             continue;
           }
           if (char === '\u007f' || char === '\b') {
@@ -262,6 +295,14 @@ export async function startFakeLabManager(token: string): Promise<FakeLabManager
     },
     set available(value: boolean) {
       state.available = value;
+    },
+    get attachedCount() {
+      return attached.length;
+    },
+    sendRaw(data) {
+      const entry = attached[attached.length - 1];
+      if (entry === undefined) throw new Error('no terminal is attached');
+      entry.ws.send(data);
     },
     async close() {
       wss.close();

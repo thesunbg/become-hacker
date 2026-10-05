@@ -33,7 +33,7 @@ packages/mission-engine  pure objective/score engine
 packages/shared     the level curve, shared so client and server cannot disagree
 ```
 
-354 tests. The API's are integration tests against real Postgres and Redis.
+615 tests. The API's are integration tests against real Postgres and Redis.
 
 Not built yet: `apps/admin`, the notebook, achievements, chapters 2–3 and their labs. Mission
 content stops at 002 of the planned 30.
@@ -154,6 +154,22 @@ When authoring:
   decorator metadata, and every injected dependency arrives `undefined`.
 - **Load order matters at startup.** `ContentService` loads content in its constructor rather
   than `onModuleInit`, because the mission registry's hook ran first and synced nothing.
+
+- **A terminal line can start with a bare `\r`.** Bash's bracketed-paste reset ends with one,
+  so from the second command of a session onwards the shell's echo has a lone CR before the
+  prompt — and `.` in a JavaScript regex never matches it. Splitting echo on newlines alone
+  made the prompt unmatchable there, which silently recorded every Tab-completed or recalled
+  command as the fragment the player typed.
+
+- **Decode the container's output per stream, not per chunk.** A read breaks wherever the pipe
+  does, which can be halfway through a multi-byte character — and most Vietnamese characters
+  are. `chunk.toString()` turns one into two replacement marks, on screen and in the record.
+  `StringDecoder` holds the partial sequence; both `apps/lab-manager` and the API's gateway
+  use one.
+
+- **Make the fake lab manager behave like the real shell.** `apps/api/test/fake-lab-manager.ts`
+  stands in for a container, so anything it does not do is untested by construction — the two
+  bugs above hid behind a simulation that printed a bare prompt and sent whole strings.
 
 ## Scope discipline
 
