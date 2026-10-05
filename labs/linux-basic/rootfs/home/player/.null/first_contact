@@ -1,0 +1,19 @@
+Good.
+
+You asked the machine to stop filtering what it showed you, and it obliged
+immediately. Notice how little resistance there was. There was no password, no
+encryption, no permission to escalate. The file was simply named with a leading
+dot, and every tool you had been using was being polite about it.
+
+That is worth sitting with for a moment. "Hidden" was never a security control.
+It was a request for tidiness that you mistook for a lock. Real systems leak
+this way constantly -- an .env file with database credentials, a .git directory
+served by a web server, an .ssh key in a backup. Nothing was broken into. The
+owner just assumed that unlisted meant unreachable.
+
+Remember that feeling. You will meet it again, and next time it will be
+protecting something that matters.
+
+  ZR{h1dd3n_1n_pl41n_s1ght}
+
+We are called NULL. You will hear from us.

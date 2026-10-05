@@ -1,0 +1,3 @@
+Flags planted in this image are fictional game tokens for an isolated sandbox.
+They are validated server-side (see docs/06-security.md) and are never sent to
+the browser as part of a mission payload.

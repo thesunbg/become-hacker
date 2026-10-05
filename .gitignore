@@ -1,0 +1,44 @@
+# dependencies
+node_modules/
+.pnpm-store/
+
+# build output
+dist/
+build/
+.next/
+out/
+*.tsbuildinfo
+
+# turbo
+.turbo/
+
+# env — never commit secrets (see docs/02-security.md)
+.env
+.env.local
+.env.*.local
+.env.test
+.env.production
+!.env.example
+
+# logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# test / coverage
+coverage/
+.nyc_output/
+
+# editors / os
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# prisma local artifacts
+apps/api/prisma/*.db
+apps/api/prisma/migrations/dev.db*
+
+# lab runtime scratch
+.labs/

@@ -1,0 +1,81 @@
+{
+  "id": "ch01-mission-001",
+  "chapter": 1,
+  "title": "Welcome",
+  "difficulty": 1,
+  "estimatedMinutes": 10,
+  "story": "A courier left a laptop at your door. No note, no sender, no explanation. The battery is at 4%. When the screen finally wakes up there is no desktop, no icons, no browser \u2014 just a blinking cursor waiting for you.\n\nSomeone wanted you to have this. Before you can find out who, you need to work out where you are.",
+  "objective": "You are somewhere inside this machine, logged in as someone. Find out who you are and where you are standing.",
+  "environment": {
+    "type": "terminal",
+    "image": "linux-basic"
+  },
+  "tasks": [
+    {
+      "id": "identify-user",
+      "type": "COMMAND",
+      "description": "Find out which user you are logged in as.",
+      "target": "whoami",
+      "xp": 30
+    },
+    {
+      "id": "identify-cwd",
+      "type": "COMMAND",
+      "description": "Find out which directory you are currently in.",
+      "target": "pwd",
+      "xp": 30
+    },
+    {
+      "id": "read-readme",
+      "type": "FILE_FOUND",
+      "description": "There is a file waiting for you in your home directory. Read it.",
+      "target": "/home/player/README.txt",
+      "xp": 40
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "The cursor is a prompt \u2014 it is waiting for you to ask the machine a question. If you wanted to know who you were, what would you ask?",
+      "xpCost": 5
+    },
+    {
+      "level": 2,
+      "text": "Linux commands are usually short, blunt English. There is a command whose entire job is to answer 'who am I?', and another that prints the directory you are working in.",
+      "xpCost": 10
+    },
+    {
+      "level": 3,
+      "text": "Try `whoami` to see your username, then `pwd` to print your working directory. To read a file: `cat README.txt`.",
+      "xpCost": 20
+    }
+  ],
+  "knowledge": [
+    {
+      "concept": "Identity: the user",
+      "explanation": "Every process on a Linux system runs as some user. That user decides what you are allowed to read, write and run. 'Who am I?' is not a philosophical question here \u2014 it is the first thing that determines what is possible.",
+      "realWorld": "Game: find out who you are \u2192 Security: establishing the security context of a session \u2192 Real world: the first question on any compromised host, because it tells an attacker what they already have and a defender whose account was used."
+    },
+    {
+      "concept": "Location: the working directory",
+      "explanation": "The filesystem is a tree, and you are always standing somewhere in it. Commands you type act relative to where you stand, which is why the same command can behave differently in two places.",
+      "realWorld": "Game: print your directory \u2192 Security: filesystem orientation \u2192 Real world: knowing your position before acting is what separates deliberate work from guessing."
+    },
+    {
+      "concept": "The shell is a conversation",
+      "explanation": "A prompt is not a wall. You ask the machine a question, it answers, and the answer shapes your next question. Everything in this game is built on that loop.",
+      "realWorld": "Game: your first commands \u2192 Security: interactive investigation \u2192 Real world: every investigation, attack and incident response is this loop repeated."
+    }
+  ],
+  "skills": [
+    {
+      "skill": "LINUX",
+      "amount": 5
+    },
+    {
+      "skill": "PROBLEM_SOLVING",
+      "amount": 2
+    }
+  ],
+  "xp": 100
+}

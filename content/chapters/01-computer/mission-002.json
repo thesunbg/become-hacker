@@ -1,0 +1,99 @@
+{
+  "id": "ch01-mission-002",
+  "chapter": 1,
+  "title": "Find the Secret",
+  "difficulty": 1,
+  "estimatedMinutes": 12,
+
+  "story": "The README ended mid-sentence:\n\n  \"If you want to understand the Internet, stop using it like a normal user.\n   I left something for you. A normal user would never see it.\"\n\nYou list your home directory. Three boring files. Nothing else.\n\nSo either the sender lied, or 'a normal user would never see it' was an instruction rather than a boast.",
+
+  "objective": "Something is in your home directory that an ordinary listing does not show you. Find it, read it, and recover the flag inside.",
+
+  "environment": {
+    "type": "terminal",
+    "image": "linux-basic"
+  },
+
+  "requires": ["ch01-mission-001"],
+
+  "tasks": [
+    {
+      "id": "list-all",
+      "type": "COMMAND",
+      "description": "List the contents of your home directory in a way that shows everything.",
+      "target": "ls -la",
+      "xp": 30
+    },
+    {
+      "id": "find-hidden",
+      "type": "FILE_FOUND",
+      "description": "Locate and read the file that was hidden from you.",
+      "target": "/home/player/.null/first_contact",
+      "xp": 50
+    },
+    {
+      "id": "submit-flag",
+      "type": "FLAG_FOUND",
+      "description": "Submit the flag you found.",
+      "xp": 40
+    },
+    {
+      "id": "search-by-name",
+      "type": "COMMAND",
+      "description": "Bonus: search the filesystem by name instead of browsing for it.",
+      "target": "find",
+      "optional": true,
+      "xp": 25
+    }
+  ],
+
+  "hints": [
+    {
+      "level": 1,
+      "text": "The sender said a normal user would never see it. Not that it was encrypted, not that it was far away — just unseen. What makes a file invisible in a listing?",
+      "xpCost": 5
+    },
+    {
+      "level": 2,
+      "text": "Linux has no special 'hidden' attribute. It uses a naming convention instead: filenames beginning with a dot are omitted from a default listing. Your tools can be asked to stop omitting them.",
+      "xpCost": 10
+    },
+    {
+      "level": 3,
+      "text": "`ls` hides dotfiles; `ls -a` shows them, and `ls -la` shows them with details. Look for a directory whose name starts with a dot.",
+      "xpCost": 20
+    },
+    {
+      "level": 4,
+      "text": "Run `ls -la` in /home/player. You will see a directory called `.null`. Go in with `cd .null`, list it, and read the file inside with `cat`.",
+      "xpCost": 30
+    }
+  ],
+
+  "flag": "ZR{h1dd3n_1n_pl41n_s1ght}",
+
+  "knowledge": [
+    {
+      "concept": "Hidden files are a convention, not a security control",
+      "explanation": "A leading dot asks tools to be polite and not clutter your listing. That is all it does. The file is not protected, not encrypted, and not harder to read — it is merely unlisted by default. Anything relying on a dot for secrecy is relying on nobody looking.",
+      "realWorld": "Game: find the hidden file → Security: security through obscurity → Real world: .env, .git and .ssh directories left on web servers leak credentials and source code constantly, precisely because 'hidden' was mistaken for 'safe'."
+    },
+    {
+      "concept": "Default output is a filtered view",
+      "explanation": "Almost every tool shows you a convenient subset of the truth and omits the rest without telling you. Learning the flags that remove the filter is most of what separates seeing from looking.",
+      "realWorld": "Game: ls vs ls -la → Security: enumeration completeness → Real world: an assessment that only reports what tools show by default misses the findings that matter."
+    },
+    {
+      "concept": "Searching beats browsing",
+      "explanation": "Walking a tree by hand works for one home directory and fails for a whole filesystem. `find` lets you state what you are looking for and have the machine do the walking.",
+      "realWorld": "Game: find by name → Security: filesystem reconnaissance → Real world: locating credentials, backups and misplaced config at scale."
+    }
+  ],
+
+  "skills": [
+    { "skill": "LINUX", "amount": 6 },
+    { "skill": "PROBLEM_SOLVING", "amount": 4 }
+  ],
+
+  "xp": 150
+}

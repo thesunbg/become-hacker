@@ -1,0 +1,24 @@
+{
+  "name": "zero-root",
+  "version": "0.0.0",
+  "private": true,
+  "description": "ZERO -> ROOT — a story-driven web game that teaches cybersecurity by making players investigate instead of read.",
+  "packageManager": "pnpm@10.28.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "content:validate": "node scripts/validate-content.mjs",
+    "infra:up": "docker compose -f infrastructure/docker/docker-compose.yml up -d",
+    "infra:down": "docker compose -f infrastructure/docker/docker-compose.yml down"
+  },
+  "devDependencies": {
+    "turbo": "^2.3.3",
+    "typescript": "^5.7.2"
+  }
+}

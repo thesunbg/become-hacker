@@ -1,0 +1,51 @@
+# ZERO -> ROOT — local development stack.
+#
+# This file brings up the backing services and the two app containers. It does NOT run
+# player labs: those are created on demand by the lab manager on a separate, isolated
+# network (see docs/06-security.md).
+name: zeroroot
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: zeroroot
+      POSTGRES_PASSWORD: zeroroot
+      POSTGRES_DB: zeroroot
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U zeroroot -d zeroroot"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    ports:
+      - "127.0.0.1:6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+networks:
+  # The app network. Player labs never join this one.
+  default:
+    name: zeroroot-app
+
+  # Declared here for documentation: the lab manager attaches lab containers to an
+  # internal network with no gateway, so labs cannot reach the internet, the host,
+  # or these services.
+  lab:
+    name: zeroroot-lab
+    internal: true
+
+volumes:
+  postgres-data:
