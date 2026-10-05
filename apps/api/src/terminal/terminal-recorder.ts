@@ -44,13 +44,24 @@ const BACKSPACE_ALT = '\b';
 const ESCAPE = '\u001b';
 const TAB = '\t';
 
-/** Removes ANSI escape sequences, so text matching sees what the player sees. */
+/**
+ * Removes ANSI escape sequences and the control bytes that cannot be stored.
+ *
+ * PostgreSQL's json type rejects \u0000 outright, so a command that prints binary — `cat` on
+ * an executable, `strings`, `head` on an image — would make the event insert throw and that
+ * command would vanish from the record. Carriage return, newline and tab are kept: they are
+ * the shape of the output, not noise.
+ */
 export function stripAnsi(text: string): string {
   // CSI sequences, OSC strings, and lone two-character escapes.
-  return text
-    .replace(/\u001b\][^\u0007\u001b]*(?:\u0007|\u001b\\)/g, '')
-    .replace(/\u001b\[[0-9;?]*[ -/]*[@-~]/g, '')
-    .replace(/\u001b[@-Z\\-_]/g, '');
+  return (
+    text
+      .replace(/\u001b\][^\u0007\u001b]*(?:\u0007|\u001b\\)/g, '')
+      .replace(/\u001b\[[0-9;?]*[ -/]*[@-~]/g, '')
+      .replace(/\u001b[@-Z\\-_]/g, '')
+      // eslint-disable-next-line no-control-regex
+      .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, '')
+  );
 }
 
 /** True when every character of `needle` appears in `haystack`, in order. */

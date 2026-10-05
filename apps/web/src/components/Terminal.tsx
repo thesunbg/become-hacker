@@ -82,7 +82,9 @@ export function Terminal({
     };
 
     socket.addEventListener('open', () => {
-      term.writeln('\u001b[90mconnecting to lab…\u001b[0m');
+      // Written without a newline: the `ready` message clears this same line. `writeln`
+      // would move the cursor on first, leaving the notice on screen for the whole session.
+      term.write('\u001b[90mconnecting to lab…\u001b[0m');
       sendResize();
     });
 
@@ -94,7 +96,8 @@ export function Terminal({
           term.write(message.data);
           break;
         case 'ready':
-          term.write('\u001b[2K\r');
+          // Carriage return first, then erase: the sequence clears the line the notice is on.
+          term.write('\r\u001b[2K');
           break;
         case 'progress':
           progressRef.current(message.progress);

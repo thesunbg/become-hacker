@@ -14,6 +14,20 @@ describe('stripAnsi', () => {
     expect(stripAnsi('\u001b]0;terminal title\u0007hello')).toBe('hello');
   });
 
+  it('removes NUL, which PostgreSQL json cannot store', () => {
+    // Without this, `cat` on a binary made the event insert throw and the command vanished
+    // from the record entirely.
+    expect(stripAnsi('before\u0000after')).toBe('beforeafter');
+  });
+
+  it('keeps the control characters that carry the shape of the output', () => {
+    expect(stripAnsi('a\r\nb\tc')).toBe('a\r\nb\tc');
+  });
+
+  it('removes other C0 control bytes a binary file would emit', () => {
+    expect(stripAnsi('a\u0001\u0002\u0007\u007fb')).toBe('ab');
+  });
+
   it('leaves ordinary text alone, flag braces included', () => {
     expect(stripAnsi('ZR{h1dd3n_1n_pl41n_s1ght}')).toBe('ZR{h1dd3n_1n_pl41n_s1ght}');
   });
