@@ -162,16 +162,21 @@ fi
 chmod 600 .env
 
 # ------------------------------------------------------------------ deploy
-PROFILES=()
-[ "$USE_HTTPS" = "1" ] && PROFILES=(--profile https)
+# Built as one array that always holds at least `-f <file>`. Expanding an *empty* array under
+# `set -u` is an "unbound variable" error on Bash before 4.4, which is what CentOS and RHEL
+# ship — so a separate, sometimes-empty profiles array broke the domain-less path there.
+COMPOSE_ARGS=(-f "$COMPOSE_FILE")
+if [ "$USE_HTTPS" = "1" ]; then
+  COMPOSE_ARGS+=(--profile https)
+fi
 
 say ""
 say "${DIM}Building. The first run takes a few minutes.${OFF}"
-"${COMPOSE[@]}" -f "$COMPOSE_FILE" "${PROFILES[@]}" build
+"${COMPOSE[@]}" "${COMPOSE_ARGS[@]}" build
 
 say ""
 say "${DIM}Starting…${OFF}"
-"${COMPOSE[@]}" -f "$COMPOSE_FILE" "${PROFILES[@]}" up -d
+"${COMPOSE[@]}" "${COMPOSE_ARGS[@]}" up -d
 
 # ------------------------------------------------------------------ verify
 say ""
@@ -185,7 +190,7 @@ for attempt in $(seq 1 60); do
   fi
   if [ "$attempt" -eq 60 ]; then
     warn "The game did not answer in 60s. Last 40 lines:"
-    "${COMPOSE[@]}" -f "$COMPOSE_FILE" logs --tail 40 game
+    "${COMPOSE[@]}" "${COMPOSE_ARGS[@]}" logs --tail 40 game
     die "Deployment did not come up cleanly."
   fi
   sleep 1
