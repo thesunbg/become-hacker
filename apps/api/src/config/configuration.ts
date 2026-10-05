@@ -2,6 +2,15 @@ export interface AppConfig {
   readonly nodeEnv: string;
   readonly port: number;
   readonly webOrigin: string;
+  /**
+   * Directory of the built web client, served by this process when set.
+   *
+   * Serving the SPA from the API keeps the whole game on one origin, which is what makes the
+   * `SameSite=Strict` session cookie work. On a platform whose generated hostnames are public
+   * suffixes — `*.up.railway.app` among them — two services are two *sites*, and the browser
+   * will not carry a cookie between them at all.
+   */
+  readonly webRoot: string;
   readonly databaseUrl: string;
   readonly redisUrl: string;
   readonly sessionSecret: string;
@@ -19,6 +28,22 @@ export interface AppConfig {
 
 const DEV_SESSION_SECRET = 'development-only-session-secret-change-me';
 
+/**
+ * The origin the browser will actually use.
+ *
+ * Deriving it from the platform's own variable when it is not set removes a whole class of
+ * misconfiguration: the CSRF check compares against this value, so a wrong one refuses every
+ * state-changing request with a 403 that looks like a bug in the app.
+ */
+function resolveWebOrigin(env: NodeJS.ProcessEnv): string {
+  if (env.WEB_ORIGIN !== undefined && env.WEB_ORIGIN !== '') return env.WEB_ORIGIN;
+  // Railway injects the service's public hostname.
+  if (env.RAILWAY_PUBLIC_DOMAIN !== undefined && env.RAILWAY_PUBLIC_DOMAIN !== '') {
+    return `https://${env.RAILWAY_PUBLIC_DOMAIN}`;
+  }
+  return 'http://localhost:5173';
+}
+
 export function loadAppConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
   const nodeEnv = env.NODE_ENV ?? 'development';
   const sessionSecret = env.SESSION_SECRET ?? '';
@@ -30,8 +55,10 @@ export function loadAppConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
 
   return {
     nodeEnv,
-    port: Number.parseInt(env.API_PORT ?? '3001', 10),
-    webOrigin: env.WEB_ORIGIN ?? 'http://localhost:5173',
+    // PORT is what most platforms inject; API_PORT stays for local use.
+    port: Number.parseInt(env.PORT ?? env.API_PORT ?? '3001', 10),
+    webOrigin: resolveWebOrigin(env),
+    webRoot: env.WEB_ROOT ?? '',
     databaseUrl: env.DATABASE_URL ?? '',
     redisUrl: env.REDIS_URL ?? 'redis://localhost:6379',
     sessionSecret: sessionSecret === '' ? DEV_SESSION_SECRET : sessionSecret,

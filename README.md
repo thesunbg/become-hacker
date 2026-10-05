@@ -87,6 +87,21 @@ pnpm content:validate
 The schema is [`content/mission.schema.json`](content/mission.schema.json); the format is
 explained in [`docs/04-mission-format.md`](docs/04-mission-format.md).
 
+## Deploying
+
+The API serves the web client, so the game is **one service on one origin** — that is what makes
+the `SameSite=Strict` session cookie work, since platform hostnames like `*.up.railway.app` are
+public suffixes and would otherwise count as separate sites.
+
+```bash
+docker build -t zeroroot/game .     # builds packages, web and api; migrates on start
+```
+
+`apps/lab-manager` is deliberately not in that image: it needs a Docker daemon to create
+sandboxes, which managed platforms do not provide, so it belongs on a machine you control.
+Full instructions, including the Railway variables, are in
+[`docs/09-deployment.md`](docs/09-deployment.md).
+
 ## Safety
 
 Every exercise in this game runs against environments that are **intentionally vulnerable,

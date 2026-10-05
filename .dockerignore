@@ -1,0 +1,22 @@
+# Keep the build context small and the image free of host state.
+node_modules
+**/node_modules
+dist
+**/dist
+build
+**/build
+.turbo
+**/.turbo
+.git
+.github
+coverage
+**/coverage
+*.log
+
+# Never copy host environment files into an image.
+.env
+.env.*
+!.env.example
+
+# Not needed by the game service.
+infrastructure/terraform

@@ -12,6 +12,7 @@ The product specification, split into the documents an implementer actually need
 | [06-security.md](06-security.md)             | Sandbox model, lab isolation, resource limits, anti-cheat, content safety. **Non-negotiable.** |
 | [07-roadmap.md](07-roadmap.md)               | Sprint plan, MVP definition of done, priorities, testing and performance targets.              |
 | [08-metrics.md](08-metrics.md)               | Analytics, learning analytics, product metrics, observability.                                 |
+| [09-deployment.md](09-deployment.md)         | Shipping it: why the game is one origin, and why the lab manager needs its own machine.        |
 
 ## The one rule that outranks the rest
 

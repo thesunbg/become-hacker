@@ -13,6 +13,11 @@ documents constrain everything else:
 - **[`docs/06-security.md`](docs/06-security.md)** — sandbox and isolation rules. Non-negotiable.
 - **[`docs/07-roadmap.md`](docs/07-roadmap.md)** — what to build now, and what not to build yet.
 
+For shipping it, see [`docs/09-deployment.md`](docs/09-deployment.md). Two constraints there are
+easy to trip over: the API serves the web client so the whole game is **one origin** (the
+`SameSite=Strict` cookie cannot cross platform hostnames, which are public suffixes), and
+`apps/lab-manager` **cannot run on a managed platform** because it needs a Docker daemon.
+
 ## Current state
 
 **Vertical Slice #1 is built and playable.** Register → sign in → dashboard → mission 01 → lab →
