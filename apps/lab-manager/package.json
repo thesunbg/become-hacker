@@ -1,0 +1,26 @@
+{
+  "name": "@zero-root/lab-manager",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "node --watch --experimental-strip-types src/main.ts",
+    "start": "node dist/main.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@zero-root/types": "workspace:*",
+    "dockerode": "^4.0.2",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/dockerode": "^3.3.32",
+    "@types/node": "^22.10.2",
+    "@types/ws": "^8.5.13",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "network": "none",
+  "user": "player",
+  "workingDir": "/home/player",
+  "command": ["/bin/bash", "--login"],
+  "writablePaths": ["/tmp"],
+  "_comment": [
+    "Chapter 1 teaches a single machine, so this lab gets no network interface at all —",
+    "the strongest isolation available, and the right default for a lab that does not need",
+    "to talk to anything. Chapter 2's network-basic lab will declare network: lab instead.",
+    "",
+    "This manifest can only describe what the lab needs. It cannot ask for privileged mode,",
+    "capabilities, a host mount or a writable root: those are constants in",
+    "apps/lab-manager/src/sandbox-spec.ts and nothing in content can reach them."
+  ]
+}
