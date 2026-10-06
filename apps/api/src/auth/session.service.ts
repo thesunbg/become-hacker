@@ -89,7 +89,21 @@ export class SessionService {
       cursor = next;
       for (const key of keys) {
         const raw = await this.redis.client.get(key);
-        if (raw !== null && (JSON.parse(raw) as SessionRecord).userId === userId) {
+        if (raw === null) continue;
+
+        // A record that will not parse belongs to nobody: `resolve` already refuses it, so it
+        // can authenticate no one and it expires on its own TTL. What must not happen is this
+        // loop throwing on it — the one caller that matters is "sign this player out
+        // everywhere" after a password change, and a single unparseable key would otherwise
+        // leave *every* session of theirs alive.
+        let record: SessionRecord;
+        try {
+          record = JSON.parse(raw) as SessionRecord;
+        } catch {
+          continue;
+        }
+
+        if (record.userId === userId) {
           await this.redis.client.del(key);
           removed++;
         }

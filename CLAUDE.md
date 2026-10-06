@@ -33,7 +33,7 @@ packages/mission-engine  pure objective/score engine
 packages/shared     the level curve, shared so client and server cannot disagree
 ```
 
-615 tests. The API's are integration tests against real Postgres and Redis.
+781 tests. The API's are integration tests against real Postgres and Redis.
 
 Not built yet: `apps/admin`, the notebook, achievements, chapters 2–3 and their labs. Mission
 content stops at 002 of the planned 30.

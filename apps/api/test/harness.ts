@@ -2,6 +2,7 @@ import type { Server } from 'node:http';
 import { ValidationPipe } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { PrismaClient } from '@prisma/client';
+import type Redis from 'ioredis';
 import { WebSocket } from 'ws';
 import { AppModule } from '../src/app.module';
 import { PrismaService } from '../src/prisma/prisma.service';
@@ -16,6 +17,10 @@ export interface Harness {
   readonly baseUrl: string;
   readonly prisma: PrismaService;
   readonly labManager: FakeLabManager;
+  /** The session and rate-limit store, for tests that need to age a session out. */
+  readonly redis: Redis;
+  /** A provider from the running application, for the few things only reachable in-process. */
+  get<T>(token: unknown): T;
   close(): Promise<void>;
 }
 
@@ -67,6 +72,10 @@ export async function startHarness(): Promise<Harness> {
     baseUrl: `http://127.0.0.1:${port}`,
     prisma,
     labManager,
+    redis: redis.client,
+    get<T>(token: unknown): T {
+      return app.get(token as never) as T;
+    },
     async close() {
       await app.close();
       await labManager.close();
@@ -77,6 +86,8 @@ export async function startHarness(): Promise<Harness> {
 /** A tiny HTTP client that keeps the session cookie and sends a trusted Origin. */
 export class Client {
   cookie = '';
+  /** The raw Set-Cookie of the last response, for asserting the cookie's attributes. */
+  lastSetCookie: string | null = null;
 
   constructor(private readonly baseUrl: string) {}
 
@@ -84,12 +95,14 @@ export class Client {
     method: string,
     path: string,
     body?: unknown,
-    options: { origin?: string | null } = {},
+    options: { origin?: string | null; headers?: Record<string, string>; cookie?: string } = {},
   ): Promise<{ status: number; body: any; raw: string }> {
     const origin = options.origin === undefined ? WEB_ORIGIN : options.origin;
     const headers: Record<string, string> = { 'content-type': 'application/json' };
     if (origin !== null) headers.origin = origin;
-    if (this.cookie !== '') headers.cookie = this.cookie;
+    const cookie = options.cookie ?? this.cookie;
+    if (cookie !== '') headers.cookie = cookie;
+    Object.assign(headers, options.headers ?? {});
 
     const response = await fetch(`${this.baseUrl}${path}`, {
       method,
@@ -98,6 +111,7 @@ export class Client {
     });
 
     const setCookie = response.headers.get('set-cookie');
+    this.lastSetCookie = setCookie;
     if (setCookie !== null) {
       const pair = setCookie.split(';')[0] as string;
       this.cookie = pair.endsWith('=') ? '' : pair;
@@ -113,11 +127,15 @@ export class Client {
     return { status: response.status, body: parsed, raw };
   }
 
-  get(path: string) {
-    return this.request('GET', path);
+  get(path: string, options?: { headers?: Record<string, string>; cookie?: string }) {
+    return this.request('GET', path, undefined, options);
   }
 
-  post(path: string, body?: unknown, options?: { origin?: string | null }) {
+  post(
+    path: string,
+    body?: unknown,
+    options?: { origin?: string | null; headers?: Record<string, string>; cookie?: string },
+  ) {
     return this.request('POST', path, body, options);
   }
 

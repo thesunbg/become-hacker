@@ -21,7 +21,7 @@ The player is never handed the answer.
 a real terminal, discover the hidden file, submit the flag, and earn XP — with mission 02, the
 hint system and the knowledge review working end to end.
 
-615 tests, including integration tests that drive the whole flow against real Postgres and
+781 tests, including integration tests that drive the whole flow against real Postgres and
 Redis, and security tests that assert the sandbox's posture without needing a Docker daemon.
 
 Next: the rest of Chapter 1 (missions 003–010), then Chapters 2 and 3. See
@@ -53,7 +53,7 @@ running player commands anywhere else, so the terminal will report the lab servi
 unavailable — see [Safety](#safety).
 
 ```bash
-pnpm test              # 615 tests; the API's need Postgres and Redis
+pnpm test              # 781 tests; the API's need Postgres and Redis
 pnpm typecheck
 pnpm content:validate  # mission JSON; the one check that needs no install
 ```
